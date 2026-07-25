@@ -17,6 +17,8 @@ import {
 } from "../lib/arc";
 import { fmtDate, fmtUsdc, shortAddr, timeLeft } from "../lib/format";
 import { recordJob, type Role } from "../lib/myjobs";
+import { savePreimage } from "../lib/deliverable";
+import { DeliverablePanel } from "../components/DeliverablePanel";
 
 // Short human reason packed into bytes32 (right-padded, truncated to 31 bytes).
 function reasonBytes32(s: string): `0x${string}` {
@@ -147,6 +149,7 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
       const deliverable = /^0x[0-9a-fA-F]{64}$/.test(raw)
         ? (raw as `0x${string}`)
         : keccak256(toHex(raw));
+      savePreimage(jobId, raw);
       await sendAndWait({
         address: ERC8183_ADDRESS,
         abi: erc8183Abi,
@@ -228,6 +231,10 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
           </a>
         </div>
       </div>
+
+      {(status === "Submitted" || status === "Completed" || status === "Rejected") && (
+        <DeliverablePanel jobId={jobId} />
+      )}
 
       {error && <div className="error">{error}</div>}
 

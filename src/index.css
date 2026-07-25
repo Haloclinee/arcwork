@@ -289,6 +289,9 @@ input.invalid { border-color: var(--red); }
   overflow-wrap: anywhere;
 }
 
+.verify-ok { color: var(--green); font-size: 14px; margin: 10px 0 0; }
+.verify-bad { color: var(--red); font-size: 14px; margin: 10px 0 0; }
+
 /* ── My jobs table ── */
 .jobs-table {
   width: 100%;
