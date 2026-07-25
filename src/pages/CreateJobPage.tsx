@@ -2,6 +2,7 @@ import { useState } from "react";
 import { decodeEventLog, isAddress, zeroAddress } from "viem";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { ERC8183_ADDRESS, erc8183Abi } from "../lib/arc";
+import { recordJob } from "../lib/myjobs";
 
 const jobCreatedEvent = {
   type: "event",
@@ -69,6 +70,7 @@ export function CreateJobPage() {
           // not the JobCreated log — skip
         }
       }
+      if (jobId !== null && address) recordJob(address, jobId, ["client"]);
       window.location.hash = jobId !== null ? `#/job/${jobId}` : "#/";
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

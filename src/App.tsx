@@ -5,6 +5,7 @@ import { shortAddr } from "./lib/format";
 import { JobsPage } from "./pages/JobsPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { CreateJobPage } from "./pages/CreateJobPage";
+import { MyJobsPage } from "./pages/MyJobsPage";
 
 function useHashRoute(): string {
   const [hash, setHash] = useState(() => window.location.hash || "#/");
@@ -60,6 +61,7 @@ export default function App() {
         </a>
         <nav className="nav">
           <a href="#/" className={route === "#/" ? "active" : ""}>Jobs</a>
+          <a href="#/mine" className={route === "#/mine" ? "active" : ""}>My jobs</a>
           <a href="#/new" className={route === "#/new" ? "active" : ""}>Post a job</a>
           <ConnectButton />
         </nav>
@@ -69,6 +71,8 @@ export default function App() {
           <JobDetailPage jobId={BigInt(jobMatch[1])} />
         ) : route === "#/new" ? (
           <CreateJobPage />
+        ) : route === "#/mine" ? (
+          <MyJobsPage />
         ) : (
           <JobsPage />
         )}

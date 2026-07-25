@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { keccak256, parseUnits, stringToHex, toHex, zeroAddress } from "viem";
 import {
   useAccount,
@@ -16,6 +16,7 @@ import {
   type Job,
 } from "../lib/arc";
 import { fmtDate, fmtUsdc, shortAddr, timeLeft } from "../lib/format";
+import { recordJob, type Role } from "../lib/myjobs";
 
 // Short human reason packed into bytes32 (right-padded, truncated to 31 bytes).
 function reasonBytes32(s: string): `0x${string}` {
@@ -53,6 +54,18 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
     functionName: "getJob",
     args: [jobId],
   });
+
+  // Track this job in "My jobs" when the connected wallet is a participant.
+  useEffect(() => {
+    if (!job || !address) return;
+    const jj = job as Job;
+    const my = address.toLowerCase();
+    const roles: Role[] = [];
+    if (jj.client.toLowerCase() === my) roles.push("client");
+    if (jj.provider.toLowerCase() === my) roles.push("provider");
+    if (jj.evaluator.toLowerCase() === my) roles.push("evaluator");
+    recordJob(address, jobId, roles);
+  }, [job, address, jobId]);
 
   if (!job) return <div className="empty">Loading job #{jobId.toString()}…</div>;
   const j = job as Job;
