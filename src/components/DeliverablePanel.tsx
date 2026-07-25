@@ -52,6 +52,20 @@ export function DeliverablePanel({ jobId }: { jobId: bigint }) {
         </p>
       ) : (
         <>
+          {proof.content !== null && (
+            <div className="deliverable-content">
+              <div className="muted small" style={{ marginBottom: 6 }}>
+                ✓ Delivered content (recovered from the submit transaction, hash-verified):
+              </div>
+              {/^https?:\/\/\S+$/.test(proof.content.trim()) ? (
+                <a href={proof.content.trim()} target="_blank" rel="noreferrer">
+                  {proof.content.trim()} ↗
+                </a>
+              ) : (
+                <pre>{proof.content}</pre>
+              )}
+            </div>
+          )}
           <div className="kv" style={{ marginBottom: 10 }}>
             <span className="muted">On-chain hash</span>
             <span className="mono" style={{ overflowWrap: "anywhere" }}>{proof.hash}</span>
@@ -67,19 +81,27 @@ export function DeliverablePanel({ jobId }: { jobId: bigint }) {
               {shortAddr(proof.txHash)} ↗
             </a>
           </div>
-          <div className="row">
-            <input
-              placeholder="Paste the deliverable text/link to verify…"
-              value={verifyText}
-              onChange={(e) => setVerifyText(e.target.value)}
-            />
-          </div>
-          {verified !== null && (
-            <p className={verified ? "verify-ok" : "verify-bad"}>
-              {verified
-                ? "✓ Match — this is exactly what the provider submitted."
-                : "✗ No match — this text does not hash to the on-chain deliverable."}
-            </p>
+          {proof.content === null && (
+            <>
+              <p className="muted small">
+                This submission didn't embed its content on-chain (submitted outside arcwork, or as
+                a bare hash). Paste the deliverable you received to verify it:
+              </p>
+              <div className="row">
+                <input
+                  placeholder="Paste the deliverable text/link to verify…"
+                  value={verifyText}
+                  onChange={(e) => setVerifyText(e.target.value)}
+                />
+              </div>
+              {verified !== null && (
+                <p className={verified ? "verify-ok" : "verify-bad"}>
+                  {verified
+                    ? "✓ Match — this is exactly what the provider submitted."
+                    : "✗ No match — this text does not hash to the on-chain deliverable."}
+                </p>
+              )}
+            </>
           )}
         </>
       )}

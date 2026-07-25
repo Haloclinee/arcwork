@@ -145,16 +145,18 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
   const submit = () =>
     run("submit", async () => {
       const raw = deliverableInput.trim();
-      // A URL/text deliverable is hashed; a ready 0x…64 hash is passed through.
-      const deliverable = /^0x[0-9a-fA-F]{64}$/.test(raw)
-        ? (raw as `0x${string}`)
-        : keccak256(toHex(raw));
+      // Text/link deliverables are embedded into optParams calldata so the
+      // content itself lives on-chain, with deliverable = keccak256(content).
+      // A ready 0x…64 hash is passed through with no embedded content.
+      const isHash = /^0x[0-9a-fA-F]{64}$/.test(raw);
+      const encoded = isHash ? "0x" : toHex(raw);
+      const deliverable = isHash ? (raw as `0x${string}`) : keccak256(encoded as `0x${string}`);
       savePreimage(jobId, raw);
       await sendAndWait({
         address: ERC8183_ADDRESS,
         abi: erc8183Abi,
         functionName: "submit",
-        args: [jobId, deliverable, "0x"],
+        args: [jobId, deliverable, encoded as `0x${string}`],
       });
     });
 
@@ -300,22 +302,24 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
             <div className="action-box">
               <h3>Submit your work</h3>
               <p className="muted small">
-                Paste a link or text — it's hashed (keccak256) and stored on-chain as the deliverable.
+                The deliverable (text or link) is stored on-chain in the transaction and shown to
+                the client right here — plus its keccak256 hash as the commitment. Note: on-chain
+                data is public; for private work submit a link instead of the content itself.
               </p>
-              <div className="row">
-                <input
-                  placeholder="https://… or a 0x… hash"
-                  value={deliverableInput}
-                  onChange={(e) => setDeliverableInput(e.target.value)}
-                />
-                <button
-                  className="btn btn-primary"
-                  disabled={busy !== null || !deliverableInput.trim()}
-                  onClick={submit}
-                >
-                  {busy === "submit" ? "Submitting…" : "Submit"}
-                </button>
-              </div>
+              <textarea
+                rows={3}
+                placeholder="Deliverable text, a link, or a ready 0x… hash"
+                value={deliverableInput}
+                onChange={(e) => setDeliverableInput(e.target.value)}
+                style={{ width: "100%", marginBottom: 10 }}
+              />
+              <button
+                className="btn btn-primary"
+                disabled={busy !== null || !deliverableInput.trim()}
+                onClick={submit}
+              >
+                {busy === "submit" ? "Submitting…" : "Submit on-chain"}
+              </button>
             </div>
           )}
           {status === "Funded" && isEvaluator && (
