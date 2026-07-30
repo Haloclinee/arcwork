@@ -34,3 +34,6 @@ contracts/*.json
 # local XMTP identity databases (hold local key material) — created by
 # agents/register-xmtp.mjs and any node-sdk script, never checked in
 *.db3
+
+.vercel
+.env*
