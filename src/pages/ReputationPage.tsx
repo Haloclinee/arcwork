@@ -46,7 +46,7 @@ export function ReputationPage({ address }: { address: `0x${string}` }) {
 
   return (
     <div className="detail">
-      <a href="#/" className="muted back">← all jobs</a>
+      <a href="#/jobs" className="muted back">← all jobs</a>
       <h1>
         Provider <Identity address={address} />
       </h1>
@@ -57,7 +57,7 @@ export function ReputationPage({ address }: { address: `0x${string}` }) {
           href={`https://testnet.arcscan.app/address/${address}`}
           target="_blank"
           rel="noreferrer"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--color-accent)" }}
         >
           Arcscan ↗
         </a>

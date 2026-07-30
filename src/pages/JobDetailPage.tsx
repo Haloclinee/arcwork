@@ -240,7 +240,7 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
 
   return (
     <div className="detail">
-      <a href="#/" className="muted back">← all jobs</a>
+      <a href="#/jobs" className="muted back">← all jobs</a>
       <div className="detail-head">
         <h1>
           Job #{jobId.toString()} <span className={`pill pill-${status.toLowerCase()}`}>{status}</span>

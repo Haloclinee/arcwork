@@ -66,7 +66,10 @@ function useArenaEngine() {
         vx: (Math.random() - 0.5) * 0.15,
         vy: (Math.random() - 0.5) * 0.15,
         radius: kind === "vault" ? 26 : kind === "judge" ? 18 : 10,
-        color: kind === "vault" ? "#7c5cff" : kind === "judge" ? "#ffc04a" : kind === "provider" ? "#2fe3a0" : "#35e0d8",
+        color:
+          kind === "vault" ? "oklch(58% 0.20 256)" :
+          kind === "judge" ? "oklch(62% 0.13 68)" :
+          kind === "provider" ? "oklch(56% 0.13 155)" : "oklch(64% 0.02 255)",
         lastActive: Date.now(),
         pulse: 1,
       };
@@ -90,7 +93,7 @@ function useArenaEngine() {
 
   function draw(ctx: CanvasRenderingContext2D, w: number, h: number) {
     // Translucent overlay instead of a hard clear — leaves soft motion trails.
-    ctx.fillStyle = "rgba(10, 11, 16, 0.28)";
+    ctx.fillStyle = "oklch(22% 0.018 260 / 0.30)";
     ctx.fillRect(0, 0, w, h);
     const now = Date.now();
 
@@ -170,12 +173,12 @@ function useArenaEngine() {
       ctx.shadowBlur = 0;
 
       if (n.kind === "vault" || n.kind === "judge") {
-        ctx.strokeStyle = "#0a0b10";
+        ctx.strokeStyle = "oklch(22% 0.018 260)";
         ctx.lineWidth = 2;
         ctx.stroke();
       }
       ctx.font = n.kind === "vault" || n.kind === "judge" ? "600 11px sans-serif" : "9px sans-serif";
-      ctx.fillStyle = "#edeefc";
+      ctx.fillStyle = "oklch(94% 0.008 255)";
       ctx.textAlign = "center";
       ctx.fillText(n.label, n.x, n.y + n.radius + 13);
     }
@@ -309,7 +312,7 @@ export function ArenaPage() {
             if (!args.client) continue;
             const c = engine.ensureNode(args.client, "client", shortAddr(args.client), w, h);
             const vault = engine.nodesRef.current.get("vault")!;
-            engine.spawnParticle(c, vault, "#35e0d8");
+            engine.spawnParticle(c, vault, "oklch(58% 0.20 256)");
             vault.pulse = 1;
             pushLog(`Job #${jobId} funded — escrow locked`);
             continue;
@@ -324,7 +327,7 @@ export function ArenaPage() {
               address: ERC8183_ADDRESS, abi: erc8183Abi, functionName: "getJob", args: [jobId],
             });
             const judgeNode = engine.nodesRef.current.get(job.evaluator.toLowerCase());
-            if (judgeNode) engine.spawnParticle(p, judgeNode, "#ffc04a");
+            if (judgeNode) engine.spawnParticle(p, judgeNode, "oklch(62% 0.13 68)");
             pushLog(`Job #${jobId} submitted for review`);
             continue;
           }
@@ -335,7 +338,7 @@ export function ArenaPage() {
               address: ERC8183_ADDRESS, abi: erc8183Abi, functionName: "getJob", args: [jobId],
             });
             const providerNode = engine.ensureNode(job.provider, "provider", shortAddr(job.provider), w, h);
-            engine.spawnParticle(vault, providerNode, "#2fe3a0");
+            engine.spawnParticle(vault, providerNode, "oklch(56% 0.13 155)");
             vault.pulse = 1;
             const judgeNode = engine.nodesRef.current.get(job.evaluator.toLowerCase());
             if (judgeNode) judgeNode.pulse = 1;
@@ -350,7 +353,7 @@ export function ArenaPage() {
             });
             const clientNode = engine.ensureNode(job.client, "client", shortAddr(job.client), w, h);
             if (job.budget > 0n) {
-              engine.spawnParticle(vault, clientNode, "#ff5c78");
+              engine.spawnParticle(vault, clientNode, "oklch(58% 0.15 25)");
               vault.pulse = 1;
             }
             const judgeNode = engine.nodesRef.current.get(job.evaluator.toLowerCase());

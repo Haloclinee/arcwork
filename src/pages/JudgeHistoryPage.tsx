@@ -65,7 +65,7 @@ export function JudgeHistoryPage({ address }: { address: `0x${string}` }) {
           href={`https://testnet.arcscan.app/address/${address}`}
           target="_blank"
           rel="noreferrer"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--color-accent)" }}
         >
           Arcscan ↗
         </a>

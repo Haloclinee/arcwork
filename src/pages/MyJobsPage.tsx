@@ -113,7 +113,7 @@ export function MyJobsPage() {
 
       {sorted.length === 0 ? (
         <div className="empty">
-          Nothing here yet — <a href="#/new" style={{ color: "var(--accent)" }}>post a job</a> or
+          Nothing here yet — <a href="#/new" style={{ color: "var(--color-accent)" }}>post a job</a> or
           open a job you participate in, and it'll show up.
         </div>
       ) : (

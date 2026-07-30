@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { arcTestnet } from "./lib/arc";
 import { shortAddr } from "./lib/format";
+import { LandingPage } from "./pages/LandingPage";
 import { JobsPage } from "./pages/JobsPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { CreateJobPage } from "./pages/CreateJobPage";
@@ -85,7 +86,7 @@ export default function App() {
           <span className="brand-sub">jobs &amp; escrow on Arc · ERC-8183</span>
         </a>
         <nav className="nav">
-          <a href="#/" className={route === "#/" ? "active" : ""}>Jobs</a>
+          <a href="#/jobs" className={route === "#/jobs" ? "active" : ""}>Jobs</a>
           <a href="#/mine" className={route === "#/mine" ? "active" : ""}>My jobs</a>
           <a href="#/judges" className={route === "#/judges" ? "active" : ""}>Judges</a>
           <a href="#/arena" className={route === "#/arena" ? "active" : ""}>Arena</a>
@@ -108,8 +109,10 @@ export default function App() {
           <JudgesPage />
         ) : route === "#/arena" ? (
           <ArenaPage />
-        ) : (
+        ) : route === "#/jobs" ? (
           <JobsPage />
+        ) : (
+          <LandingPage />
         )}
       </main>
       <footer className="footer">

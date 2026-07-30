@@ -78,7 +78,7 @@ export function CreateJobPage() {
       if (address && walletClient) {
         getXmtpClient(address, walletClient).catch(() => {});
       }
-      window.location.hash = jobId !== null ? `#/job/${jobId}` : "#/";
+      window.location.hash = jobId !== null ? `#/job/${jobId}` : "#/jobs";
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg.split("\n")[0].slice(0, 200));

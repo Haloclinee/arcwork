@@ -85,7 +85,7 @@ export function TipJudge({ jobId }: { jobId: bigint }) {
   );
 }
 
-// Compact "🧧 0.32 USDC tipped" readout for judge cards / history pages.
+// Compact "0.32 USDC tipped" readout for judge cards / history pages.
 export function TipsBadge({ judge }: { judge: `0x${string}` }) {
   const { data: total } = useReadContract({
     address: TIPS_ADDRESS,
@@ -94,5 +94,5 @@ export function TipsBadge({ judge }: { judge: `0x${string}` }) {
     args: [judge],
   });
   if (!total || total === 0n) return null;
-  return <span className="tips-badge">🧧 {Number(formatEther(total)).toFixed(2)} USDC tipped</span>;
+  return <span className="tips-badge mono">{Number(formatEther(total)).toFixed(2)} USDC tipped</span>;
 }
