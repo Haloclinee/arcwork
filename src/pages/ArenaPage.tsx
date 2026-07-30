@@ -30,6 +30,7 @@ interface ArenaNode {
   pulse: number; // 0..1, decays each frame — drawn as a glow ring
   homeX?: number; // judges/vault gently spring back here instead of free-floating away
   homeY?: number;
+  orbitTarget?: string; // id of the node this one gently orbits — client→vault, provider→its judge
 }
 
 interface Particle {
@@ -72,6 +73,7 @@ function useArenaEngine() {
           kind === "provider" ? "oklch(56% 0.13 155)" : "oklch(64% 0.02 255)",
         lastActive: Date.now(),
         pulse: 1,
+        orbitTarget: kind === "client" ? "vault" : undefined,
       };
       nodesRef.current.set(key, n);
       // Evict oldest idle dynamic node if over cap
@@ -107,11 +109,29 @@ function useArenaEngine() {
           n.vy += (n.homeY - n.y) * 0.004 + (Math.random() - 0.5) * 0.02;
           n.vx *= 0.94;
           n.vy *= 0.94;
-        } else if (Math.random() < 0.02) {
-          n.vx += (Math.random() - 0.5) * 0.1;
-          n.vy += (Math.random() - 0.5) * 0.1;
-          n.vx *= 0.98;
-          n.vy *= 0.98;
+        } else {
+          // Clients and providers loosely orbit the node they actually
+          // transact with (vault, or their job's judge) — a gentle pull
+          // toward a moving target plus small jitter, not a pure random
+          // walk. Falls back to free drift only when the relationship
+          // isn't known yet (e.g. a provider before their judge shows up).
+          const target = n.orbitTarget ? nodesRef.current.get(n.orbitTarget) : undefined;
+          if (target) {
+            const dx = target.x - n.x;
+            const dy = target.y - n.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const orbitRadius = n.radius + target.radius + 46;
+            const pull = dist > orbitRadius ? 0.0018 : -0.0009;
+            n.vx += dx * pull + (Math.random() - 0.5) * 0.03;
+            n.vy += dy * pull + (Math.random() - 0.5) * 0.03;
+            n.vx *= 0.96;
+            n.vy *= 0.96;
+          } else if (Math.random() < 0.02) {
+            n.vx += (Math.random() - 0.5) * 0.1;
+            n.vy += (Math.random() - 0.5) * 0.1;
+            n.vx *= 0.98;
+            n.vy *= 0.98;
+          }
         }
         n.x += n.vx;
         n.y += n.vy;
@@ -327,7 +347,10 @@ export function ArenaPage() {
               address: ERC8183_ADDRESS, abi: erc8183Abi, functionName: "getJob", args: [jobId],
             });
             const judgeNode = engine.nodesRef.current.get(job.evaluator.toLowerCase());
-            if (judgeNode) engine.spawnParticle(p, judgeNode, "oklch(62% 0.13 68)");
+            if (judgeNode) {
+              engine.spawnParticle(p, judgeNode, "oklch(62% 0.13 68)");
+              p.orbitTarget = judgeNode.id;
+            }
             pushLog(`Job #${jobId} submitted for review`);
             continue;
           }
@@ -341,7 +364,10 @@ export function ArenaPage() {
             engine.spawnParticle(vault, providerNode, "oklch(56% 0.13 155)");
             vault.pulse = 1;
             const judgeNode = engine.nodesRef.current.get(job.evaluator.toLowerCase());
-            if (judgeNode) judgeNode.pulse = 1;
+            if (judgeNode) {
+              judgeNode.pulse = 1;
+              providerNode.orbitTarget = judgeNode.id;
+            }
             pushLog(`Job #${jobId} completed — payment released to provider`);
             continue;
           }

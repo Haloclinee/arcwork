@@ -14,6 +14,50 @@ import { ArenaPage } from "./pages/ArenaPage";
 import { TutorialModal } from "./components/Tutorial";
 
 const TUTORIAL_KEY = "arcwork:tutorial:seen";
+const THEME_KEY = "arcwork:theme";
+
+type Theme = "light" | "dark";
+
+function getStoredTheme(): Theme | null {
+  try {
+    const v = localStorage.getItem(THEME_KEY);
+    return v === "light" || v === "dark" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = getStoredTheme();
+    if (stored) return stored;
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  function pick(next: Theme) {
+    setTheme(next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      // best effort only
+    }
+  }
+
+  return (
+    <div className="theme-toggle" role="group" aria-label="Toggle theme">
+      <button type="button" className={theme === "light" ? "is-active" : ""} onClick={() => pick("light")}>
+        Light
+      </button>
+      <button type="button" className={theme === "dark" ? "is-active" : ""} onClick={() => pick("dark")}>
+        Dark
+      </button>
+    </div>
+  );
+}
 
 function useHashRoute(): string {
   const [hash, setHash] = useState(() => window.location.hash || "#/");
@@ -61,13 +105,27 @@ export default function App() {
   const jobMatch = route.match(/^#\/job\/(\d+)$/);
   const repMatch = route.match(/^#\/rep\/(0x[0-9a-fA-F]{40})$/);
   const judgeMatch = route.match(/^#\/judge\/(0x[0-9a-fA-F]{40})$/);
-  const [showTutorial, setShowTutorial] = useState(() => {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [route]);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Let the page render first — a blocking modal before the visitor has
+  // even seen the site is a bad first impression. Delay the first-run
+  // tutorial slightly instead of firing it on mount.
+  useEffect(() => {
+    let seen = false;
     try {
-      return !localStorage.getItem(TUTORIAL_KEY);
+      seen = !!localStorage.getItem(TUTORIAL_KEY);
     } catch {
-      return false;
+      // storage unavailable — treat as unseen, still delay
     }
-  });
+    if (seen) return;
+    const t = setTimeout(() => setShowTutorial(true), 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   function closeTutorial() {
     try {
@@ -85,14 +143,23 @@ export default function App() {
           <span className="brand-mark">◠</span> arcwork
           <span className="brand-sub">jobs &amp; escrow on Arc · ERC-8183</span>
         </a>
-        <nav className="nav">
+        <nav className={`nav ${mobileNavOpen ? "nav-open" : ""}`}>
           <a href="#/jobs" className={route === "#/jobs" ? "active" : ""}>Jobs</a>
           <a href="#/mine" className={route === "#/mine" ? "active" : ""}>My jobs</a>
           <a href="#/judges" className={route === "#/judges" ? "active" : ""}>Judges</a>
           <a href="#/arena" className={route === "#/arena" ? "active" : ""}>Arena</a>
-          <a href="#/new" className={route === "#/new" ? "active" : ""}>Post a job</a>
+          <a href="#/new" className="btn btn-primary small-btn">Post a job</a>
+          <ThemeToggle />
           <ConnectButton />
         </nav>
+        <button
+          className="nav-burger"
+          onClick={() => setMobileNavOpen((v) => !v)}
+          aria-label="Toggle menu"
+          aria-expanded={mobileNavOpen}
+        >
+          {mobileNavOpen ? "✕" : "☰"}
+        </button>
       </header>
       <main className="content">
         {jobMatch ? (
