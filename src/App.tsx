@@ -164,55 +164,63 @@ export default function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <a href="#/" className="brand">
-          <span className="brand-mark">◠</span> arcwork
-          <span className="brand-sub">jobs &amp; escrow on Arc · ERC-8183</span>
-        </a>
-        <nav className={`nav ${mobileNavOpen ? "nav-open" : ""}`}>
-          <a href="#/jobs" className={route === "#/jobs" ? "active" : ""}>Jobs</a>
-          <a href="#/mine" className={route === "#/mine" ? "active" : ""}>My jobs</a>
-          <a href="#/judges" className={route === "#/judges" ? "active" : ""}>Judges</a>
-          <a href="#/arena" className={route === "#/arena" ? "active" : ""}>Arena</a>
-          <NavJump />
-          <a href="#/new" className="btn btn-primary small-btn">Post a job</a>
-          <ConnectButton />
-        </nav>
-        <button
-          className="nav-burger"
-          onClick={() => setMobileNavOpen((v) => !v)}
-          aria-label="Toggle menu"
-          aria-expanded={mobileNavOpen}
-        >
-          {mobileNavOpen ? "✕" : "☰"}
-        </button>
+        <div className="topbar-inner">
+          <a href="#/" className="brand">
+            <span className="brand-mark">◠</span> arcwork
+            <span className="brand-sub">jobs &amp; escrow on Arc · ERC-8183</span>
+          </a>
+          <nav className={`nav ${mobileNavOpen ? "nav-open" : ""}`}>
+            <a href="#/jobs" className={route === "#/jobs" ? "active" : ""}>Jobs</a>
+            <a href="#/mine" className={route === "#/mine" ? "active" : ""}>My jobs</a>
+            <a href="#/judges" className={route === "#/judges" ? "active" : ""}>Judges</a>
+            <a href="#/arena" className={route === "#/arena" ? "active" : ""}>Arena</a>
+          </nav>
+          <button
+            className="nav-burger"
+            onClick={() => setMobileNavOpen((v) => !v)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileNavOpen}
+          >
+            {mobileNavOpen ? "✕" : "☰"}
+          </button>
+        </div>
       </header>
-      <main className="content">
-        {jobMatch ? (
-          <JobDetailPage jobId={BigInt(jobMatch[1])} />
-        ) : repMatch ? (
-          <ReputationPage address={repMatch[1] as `0x${string}`} />
-        ) : judgeMatch ? (
-          <JudgeHistoryPage address={judgeMatch[1] as `0x${string}`} />
-        ) : route === "#/new" ? (
-          <CreateJobPage />
-        ) : route === "#/mine" ? (
-          <MyJobsPage />
-        ) : route === "#/judges" ? (
-          <JudgesPage />
-        ) : route === "#/arena" ? (
-          <ArenaPage />
-        ) : route === "#/jobs" ? (
-          <JobsPage />
-        ) : (
-          <LandingPage />
-        )}
-      </main>
-      <footer className="footer">
-        Built on the canonical ERC-8183 deployment on Arc Testnet · gas is paid in USDC ·{" "}
-        <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">faucet</a> ·{" "}
-        <button className="footer-help" onClick={() => setShowTutorial(true)}>how this works</button>
-      </footer>
+      <div className="container">
+        <main className="content">
+          {jobMatch ? (
+            <JobDetailPage jobId={BigInt(jobMatch[1])} />
+          ) : repMatch ? (
+            <ReputationPage address={repMatch[1] as `0x${string}`} />
+          ) : judgeMatch ? (
+            <JudgeHistoryPage address={judgeMatch[1] as `0x${string}`} />
+          ) : route === "#/new" ? (
+            <CreateJobPage />
+          ) : route === "#/mine" ? (
+            <MyJobsPage />
+          ) : route === "#/judges" ? (
+            <JudgesPage />
+          ) : route === "#/arena" ? (
+            <ArenaPage />
+          ) : route === "#/jobs" ? (
+            <JobsPage />
+          ) : (
+            <LandingPage />
+          )}
+        </main>
+        <footer className="footer">
+          Built on the canonical ERC-8183 deployment on Arc Testnet · gas is paid in USDC ·{" "}
+          <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">faucet</a> ·{" "}
+          <button className="footer-help" onClick={() => setShowTutorial(true)}>how this works</button>
+        </footer>
+      </div>
       {showTutorial && <TutorialModal onClose={closeTutorial} />}
+      <div className="corner-actions">
+        <NavJump />
+        <a href="#/new" className="btn btn-primary small-btn">Post a job</a>
+      </div>
+      <div className="wallet-fab">
+        <ConnectButton />
+      </div>
       <ThemeToggle />
     </div>
   );

@@ -121,23 +121,60 @@ html, body {
 a { color: inherit; text-decoration: none; }
 
 .shell {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 0 24px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* ── Top bar ── */
+.container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top bar — spans the full viewport edge to edge, unlike the
+   centered content column below it. ── */
 .topbar {
   position: relative;
+  border-bottom: 1px solid var(--color-rule);
+  width: 100%;
+}
+.topbar-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--color-rule);
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 2rem;
+}
+
+/* Corner actions — job lookup + the primary CTA break out of the
+   centered nav column and pin to the true top-right of the page. */
+.corner-actions {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 31;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+@media (max-width: 860px) {
+  .corner-actions .jump { display: none; }
+}
+
+/* Wallet connect gets a quieter, more distinctive home than the nav
+   row — floating opposite the theme toggle. */
+.wallet-fab {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  z-index: 31;
 }
 @media (max-width: 860px) {
   .brand-sub { display: none; }
@@ -180,7 +217,6 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-left: auto;
   border: 1px solid var(--color-rule-2);
   border-radius: 6px;
   padding: 0.3rem 0.6rem 0.3rem 0.7rem;
@@ -266,7 +302,6 @@ a { color: inherit; text-decoration: none; }
   .nav a { padding: 10px 12px; }
   .nav a.active::after { display: none; }
   .nav a.active { background: var(--color-paper-2); border-radius: 6px; }
-  .nav .btn { width: 100%; justify-content: center; margin-top: 4px; }
 }
 
 @media (min-width: 861px) {

@@ -1,6 +1,6 @@
 import type { PublicClient } from "viem";
 import { ERC8183_ADDRESS } from "./arc";
-import { jobCreatedEvent } from "./events";
+import { jobCreatedEvent, jobSubmittedEvent } from "./events";
 
 const CHUNK = 9_500n;
 const MAX_CHUNKS = 20; // ≈190k blocks of recent history (public RPC scan cap)
@@ -16,11 +16,13 @@ export interface RepScan {
 const key = (field: HistoryField, address: string) => `arcwork:rep:${field}:${address.toLowerCase()}`;
 const TTL_MS = 10 * 60 * 1000;
 
-// Scans recent JobCreated logs for jobs where `address` played `field`
-// (provider or evaluator). `provider` is an indexed topic (server-side
-// filtered); `evaluator` is not indexed in this contract, so viem decodes
-// every JobCreated log in range and filters client-side — same result, just
-// can't narrow via topics. Both are bounded by the public-RPC 10k-block cap.
+// Scans recent logs for jobs where `address` played `field` (provider or
+// evaluator). `provider` is only set on JobCreated for direct-hire jobs —
+// most jobs are created open and assigned later via setProvider(), which
+// emits no event — so provider history is scanned off JobSubmitted instead,
+// which every real provider hits once they deliver and is indexed there.
+// `evaluator` is not indexed on JobCreated, so viem decodes every log in
+// range and filters client-side. Both are bounded by the public-RPC 10k-block cap.
 export async function scanAddressHistory(
   client: PublicClient,
   address: `0x${string}`,
@@ -41,13 +43,21 @@ export async function scanAddressHistory(
     if (toBlock < 1n) break;
     let fromBlock = toBlock - CHUNK + 1n;
     if (fromBlock < 1n) fromBlock = 1n;
-    const logs = await client.getLogs({
-      address: ERC8183_ADDRESS,
-      event: jobCreatedEvent,
-      args: { [field]: address } as Record<HistoryField, `0x${string}`>,
-      fromBlock,
-      toBlock,
-    });
+    const logs = await (field === "provider"
+      ? client.getLogs({
+          address: ERC8183_ADDRESS,
+          event: jobSubmittedEvent,
+          args: { provider: address },
+          fromBlock,
+          toBlock,
+        })
+      : client.getLogs({
+          address: ERC8183_ADDRESS,
+          event: jobCreatedEvent,
+          args: { evaluator: address } as unknown as { provider?: `0x${string}` },
+          fromBlock,
+          toBlock,
+        }));
     for (const log of logs) {
       if (log.args.jobId !== undefined) ids.push(log.args.jobId.toString());
     }

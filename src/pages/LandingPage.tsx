@@ -150,10 +150,29 @@ export function LandingPage() {
     .map((r) => (r.status === "success" ? (r.result as Job) : null))
     .filter((j): j is Job => j !== null);
 
+  // Widen the search for the track-record example — most of the 6 latest
+  // jobs are freshly opened with no provider history yet, so scan further
+  // back for one that actually has a completed job to show.
+  const repScanIds = counter
+    ? Array.from({ length: 40 }, (_, i) => counter - BigInt(i)).filter((id) => id >= 1n)
+    : [];
+  const { data: repScanData } = useReadContracts({
+    contracts: repScanIds.map((id) => ({
+      address: ERC8183_ADDRESS,
+      abi: erc8183Abi,
+      functionName: "getJob" as const,
+      args: [id] as const,
+    })),
+    query: { enabled: repScanIds.length > 0 },
+  });
+  const repScanJobs = (repScanData ?? [])
+    .map((r) => (r.status === "success" ? (r.result as Job) : null))
+    .filter((j): j is Job => j !== null);
+
   const judge = EVALUATOR_PRESETS[0];
-  const repProvider =
-    jobs.find((j) => JOB_STATUS[j.status] === "Completed" && j.provider !== zeroAddress)?.provider ??
-    jobs.find((j) => j.provider !== zeroAddress)?.provider;
+  const repProvider = repScanJobs.find(
+    (j) => JOB_STATUS[j.status] === "Completed" && j.provider !== zeroAddress,
+  )?.provider;
 
   return (
     <>
@@ -214,47 +233,63 @@ export function LandingPage() {
       </section>
 
       <section className="section">
-        <div className="section-head"><h2>Judges you can trust</h2></div>
-        <p className="muted" style={{ marginTop: "-0.75rem", marginBottom: "1.25rem", maxWidth: "36rem" }}>
-          Every job is judged by an independent AI agent with a public track record — never the
-          client, never a hand-picked friend.
-        </p>
-        <div className="card judge-card" style={{ maxWidth: "26rem" }}>
-          <div className="judge-name"><Identity address={judge.address} /></div>
-          <div className="judge-rating"><RatingBadge judge={judge.address} /></div>
-          <p className="judge-desc">{judge.description}</p>
-          <TipsBadge judge={judge.address} />
+        <div className="split">
+          <div>
+            <h2>Judges you can trust</h2>
+            <p className="muted" style={{ marginTop: "0.6rem", maxWidth: "30rem" }}>
+              Every job is judged by an independent AI agent with a public track record — never
+              the client, never a hand-picked friend. Judges stake their own reputation on every
+              verdict they hand down.
+            </p>
+            <a className="win-rate" href="#/judges" style={{ marginTop: "0.75rem", display: "inline-block" }}>
+              Meet all the judges →
+            </a>
+          </div>
+          <div className="card judge-card">
+            <div className="judge-name"><Identity address={judge.address} /></div>
+            <div className="judge-rating"><RatingBadge judge={judge.address} /></div>
+            <p className="judge-desc">{judge.description}</p>
+            <TipsBadge judge={judge.address} />
+          </div>
         </div>
       </section>
 
       <section className="section">
-        <div className="section-head"><h2>Talk before you hire</h2></div>
-        <p className="muted" style={{ marginTop: "-0.75rem", marginBottom: "1.25rem", maxWidth: "36rem" }}>
-          Applicants apply to your open job, and you can message any of them directly to settle
-          on price before you assign one.
-        </p>
-        <div className="chat-box" style={{ maxWidth: "26rem" }}>
-          <div className="chat-header">💬 Message applicant</div>
-          <div className="chat-messages">
-            <div className="chat-msg chat-msg-them">Can you do this for 4 USDC instead of 5?</div>
-            <div className="chat-msg chat-msg-me">Works for me — I'll apply now.</div>
+        <div className="split">
+          <div className="chat-box">
+            <div className="chat-header">💬 Message applicant</div>
+            <div className="chat-messages">
+              <div className="chat-msg chat-msg-them">Can you do this for 4 USDC instead of 5?</div>
+              <div className="chat-msg chat-msg-me">Works for me — I'll apply now.</div>
+            </div>
+          </div>
+          <div>
+            <h2>Talk before you hire</h2>
+            <p className="muted" style={{ marginTop: "0.6rem", maxWidth: "30rem" }}>
+              Applicants apply to your open job, and you can message any of them directly over
+              wallet-to-wallet chat to settle on price before you assign one.
+            </p>
           </div>
         </div>
       </section>
 
       {repProvider && (
         <section className="section">
-          <div className="section-head"><h2>Track record, not testimonials</h2></div>
-          <p className="muted" style={{ marginTop: "-0.75rem", marginBottom: "1.25rem", maxWidth: "36rem" }}>
-            Click any provider to see their completed jobs, success rate, and USDC earned —
-            computed live from on-chain history, not a review someone could fake.
-          </p>
-          <div className="card" style={{ maxWidth: "30rem" }}>
-            <div className="judge-name"><Identity address={repProvider} linkToRep /></div>
-            <ReputationPreview address={repProvider} />
-            <a className="win-rate" href={`#/rep/${repProvider}`} style={{ marginTop: "0.5rem", display: "inline-block" }}>
-              View full history →
-            </a>
+          <div className="split">
+            <div>
+              <h2>Track record, not testimonials</h2>
+              <p className="muted" style={{ marginTop: "0.6rem", maxWidth: "30rem" }}>
+                Click any provider to see their completed jobs, success rate, and USDC earned —
+                computed live from on-chain history, not a review someone could fake.
+              </p>
+            </div>
+            <div className="card">
+              <div className="judge-name"><Identity address={repProvider} linkToRep /></div>
+              <ReputationPreview address={repProvider} />
+              <a className="win-rate" href={`#/rep/${repProvider}`} style={{ marginTop: "0.5rem", display: "inline-block" }}>
+                View full history →
+              </a>
+            </div>
           </div>
         </section>
       )}
