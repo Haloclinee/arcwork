@@ -1,16 +1,7 @@
 import { decodeFunctionData, hexToString, keccak256, type PublicClient } from "viem";
 import { ERC8183_ADDRESS, erc8183Abi } from "./arc";
 
-// Verified shape: JobSubmitted(uint256 indexed jobId, address indexed provider, bytes32 deliverable)
-export const jobSubmittedEvent = {
-  type: "event",
-  name: "JobSubmitted",
-  inputs: [
-    { name: "jobId", type: "uint256", indexed: true },
-    { name: "provider", type: "address", indexed: true },
-    { name: "deliverable", type: "bytes32", indexed: false },
-  ],
-} as const;
+import { jobSubmittedEvent } from "./events";
 
 const CHUNK = 9_500n; // public RPCs cap eth_getLogs at 10k blocks
 const MAX_CHUNKS = 30;

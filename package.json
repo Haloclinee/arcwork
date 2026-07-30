@@ -1,7 +1,8 @@
 {
-  "name": "arc",
+  "name": "arcwork",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +11,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@tanstack/react-query": "^5.101.4",
+    "@xmtp/browser-sdk": "^7.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "viem": "^2.55.8",
@@ -21,7 +24,9 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "@xmtp/node-sdk": "^6.0.0",
     "oxlint": "^1.71.0",
+    "solc": "^0.8.28",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   }

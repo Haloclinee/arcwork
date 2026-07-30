@@ -3,20 +3,7 @@ import { useAccount, usePublicClient, useReadContracts } from "wagmi";
 import { ERC8183_ADDRESS, erc8183Abi, JOB_STATUS, type Job } from "../lib/arc";
 import { fmtUsdc, timeLeft } from "../lib/format";
 import { getMyJobs, recordJob, type Role } from "../lib/myjobs";
-
-// Verified against the deployed contract: topic0 0xb0f0…79b9, jobId/client/provider indexed.
-const jobCreatedEvent = {
-  type: "event",
-  name: "JobCreated",
-  inputs: [
-    { name: "jobId", type: "uint256", indexed: true },
-    { name: "client", type: "address", indexed: true },
-    { name: "provider", type: "address", indexed: true },
-    { name: "evaluator", type: "address", indexed: false },
-    { name: "expiredAt", type: "uint256", indexed: false },
-    { name: "hook", type: "address", indexed: false },
-  ],
-} as const;
+import { jobCreatedEvent } from "../lib/events";
 
 const SCAN_CHUNK = 9_500n; // stay under the 10k getLogs cap
 const SCAN_CHUNKS = 20; // ≈190k blocks of recent history

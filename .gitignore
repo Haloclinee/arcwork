@@ -25,3 +25,12 @@ dist-ssr
 
 .playwright-mcp/
 arcwork-home.png
+
+agents/.env
+
+# compiled contract artifacts — regenerate with `node contracts/compile.mjs`
+contracts/*.json
+
+# local XMTP identity databases (hold local key material) — created by
+# agents/register-xmtp.mjs and any node-sdk script, never checked in
+*.db3

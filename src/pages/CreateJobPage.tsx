@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { decodeEventLog, isAddress, zeroAddress } from "viem";
-import { useAccount, usePublicClient, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useWalletClient, useWriteContract } from "wagmi";
 import { ERC8183_ADDRESS, erc8183Abi } from "../lib/arc";
 import { recordJob } from "../lib/myjobs";
+import { EVALUATOR_PRESETS } from "../lib/presets";
+import { getXmtpClient } from "../lib/xmtp";
 
 const jobCreatedEvent = {
   type: "event",
@@ -28,19 +30,18 @@ const DURATIONS = [
 export function CreateJobPage() {
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
 
   const [description, setDescription] = useState("");
   const [provider, setProvider] = useState("");
-  const [evaluator, setEvaluator] = useState("");
+  const [evaluator, setEvaluator] = useState<`0x${string}`>(EVALUATOR_PRESETS[0].address);
   const [duration, setDuration] = useState<number>(7 * 86400);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const providerOk = provider.trim() === "" || isAddress(provider.trim());
-  const evaluatorOk = isAddress(evaluator.trim());
-  const canSubmit =
-    isConnected && description.trim().length > 0 && providerOk && evaluatorOk && !busy;
+  const canSubmit = isConnected && description.trim().length > 0 && providerOk && !busy;
 
   async function create() {
     setBusy(true);
@@ -53,7 +54,7 @@ export function CreateJobPage() {
         functionName: "createJob",
         args: [
           (provider.trim() || zeroAddress) as `0x${string}`,
-          evaluator.trim() as `0x${string}`,
+          evaluator,
           expiredAt,
           description.trim(),
           zeroAddress, // no hook
@@ -71,6 +72,12 @@ export function CreateJobPage() {
         }
       }
       if (jobId !== null && address) recordJob(address, jobId, ["client"]);
+      // Best-effort: register this wallet's XMTP inbox now, so applicants
+      // can reach the client via "Message client" without the client having
+      // to open a chat first themselves.
+      if (address && walletClient) {
+        getXmtpClient(address, walletClient).catch(() => {});
+      }
       window.location.hash = jobId !== null ? `#/job/${jobId}` : "#/";
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -111,18 +118,38 @@ export function CreateJobPage() {
         </label>
 
         <label>
-          <span>Evaluator (required — decides payout vs refund)</span>
-          <input
-            placeholder="0x… a third party you both trust"
-            value={evaluator}
-            onChange={(e) => setEvaluator(e.target.value)}
-            className={evaluator === "" || evaluatorOk ? "" : "invalid"}
-          />
-          {address && evaluator.trim().toLowerCase() === address.toLowerCase() && (
-            <span className="muted small">
-              Heads up: you can't evaluate your own job as the provider — pick a neutral party.
-            </span>
-          )}
+          <span>Judge (decides payout vs refund)</span>
+          <p className="muted small" style={{ margin: "-2px 0 8px" }}>
+            Every job on arcwork is judged by one of these independent AI agents — no custom or
+            self-appointed evaluators, so every verdict is genuinely neutral. A 1% platform fee goes
+            to whichever judge you pick — but only if the job actually completes successfully; there's
+            nothing to pay if it's rejected. Separate from any tip.
+          </p>
+          <div className="evaluator-options">
+            {EVALUATOR_PRESETS.map((p) => (
+              <label key={p.address} className="evaluator-option">
+                <input
+                  type="radio"
+                  name="evaluator"
+                  checked={evaluator === p.address}
+                  onChange={() => setEvaluator(p.address)}
+                />
+                <div>
+                  <div className="evaluator-name">
+                    <span className="ans-name">{p.ansName}<span className="ans-suffix">.arc</span></span>
+                  </div>
+                  <div className="muted small">{p.description}</div>
+                  <a
+                    className="evaluator-track-link"
+                    href={`#/judge/${p.address}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    view track record →
+                  </a>
+                </div>
+              </label>
+            ))}
+          </div>
         </label>
 
         <label>

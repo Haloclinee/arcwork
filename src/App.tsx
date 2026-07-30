@@ -6,6 +6,13 @@ import { JobsPage } from "./pages/JobsPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { CreateJobPage } from "./pages/CreateJobPage";
 import { MyJobsPage } from "./pages/MyJobsPage";
+import { ReputationPage } from "./pages/ReputationPage";
+import { JudgesPage } from "./pages/JudgesPage";
+import { JudgeHistoryPage } from "./pages/JudgeHistoryPage";
+import { ArenaPage } from "./pages/ArenaPage";
+import { TutorialModal } from "./components/Tutorial";
+
+const TUTORIAL_KEY = "arcwork:tutorial:seen";
 
 function useHashRoute(): string {
   const [hash, setHash] = useState(() => window.location.hash || "#/");
@@ -51,6 +58,24 @@ function ConnectButton() {
 export default function App() {
   const route = useHashRoute();
   const jobMatch = route.match(/^#\/job\/(\d+)$/);
+  const repMatch = route.match(/^#\/rep\/(0x[0-9a-fA-F]{40})$/);
+  const judgeMatch = route.match(/^#\/judge\/(0x[0-9a-fA-F]{40})$/);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try {
+      return !localStorage.getItem(TUTORIAL_KEY);
+    } catch {
+      return false;
+    }
+  });
+
+  function closeTutorial() {
+    try {
+      localStorage.setItem(TUTORIAL_KEY, "1");
+    } catch {
+      // storage unavailable — just close for this session
+    }
+    setShowTutorial(false);
+  }
 
   return (
     <div className="shell">
@@ -62,6 +87,8 @@ export default function App() {
         <nav className="nav">
           <a href="#/" className={route === "#/" ? "active" : ""}>Jobs</a>
           <a href="#/mine" className={route === "#/mine" ? "active" : ""}>My jobs</a>
+          <a href="#/judges" className={route === "#/judges" ? "active" : ""}>Judges</a>
+          <a href="#/arena" className={route === "#/arena" ? "active" : ""}>Arena</a>
           <a href="#/new" className={route === "#/new" ? "active" : ""}>Post a job</a>
           <ConnectButton />
         </nav>
@@ -69,18 +96,28 @@ export default function App() {
       <main className="content">
         {jobMatch ? (
           <JobDetailPage jobId={BigInt(jobMatch[1])} />
+        ) : repMatch ? (
+          <ReputationPage address={repMatch[1] as `0x${string}`} />
+        ) : judgeMatch ? (
+          <JudgeHistoryPage address={judgeMatch[1] as `0x${string}`} />
         ) : route === "#/new" ? (
           <CreateJobPage />
         ) : route === "#/mine" ? (
           <MyJobsPage />
+        ) : route === "#/judges" ? (
+          <JudgesPage />
+        ) : route === "#/arena" ? (
+          <ArenaPage />
         ) : (
           <JobsPage />
         )}
       </main>
       <footer className="footer">
         Built on the canonical ERC-8183 deployment on Arc Testnet · gas is paid in USDC ·{" "}
-        <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">faucet</a>
+        <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">faucet</a> ·{" "}
+        <button className="footer-help" onClick={() => setShowTutorial(true)}>how this works</button>
       </footer>
+      {showTutorial && <TutorialModal onClose={closeTutorial} />}
     </div>
   );
 }

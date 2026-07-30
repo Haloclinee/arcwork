@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { keccak256, parseUnits, stringToHex, toHex, zeroAddress } from "viem";
+import { formatEther, keccak256, parseUnits, stringToHex, toHex, zeroAddress } from "viem";
 import {
   useAccount,
   usePublicClient,
@@ -16,9 +16,15 @@ import {
   type Job,
 } from "../lib/arc";
 import { fmtDate, fmtUsdc, shortAddr, timeLeft } from "../lib/format";
+import { FEE_ADDRESS, feeAbi } from "../lib/fee";
 import { recordJob, type Role } from "../lib/myjobs";
 import { savePreimage } from "../lib/deliverable";
 import { DeliverablePanel } from "../components/DeliverablePanel";
+import { ApplicationsPanel } from "../components/ApplicationsPanel";
+import { StarRating } from "../components/StarRating";
+import { TipJudge } from "../components/TipJudge";
+import { Erc8004Feedback } from "../components/Erc8004Feedback";
+import { Identity } from "../components/Identity";
 
 // Short human reason packed into bytes32 (right-padded, truncated to 31 bytes).
 function reasonBytes32(s: string): `0x${string}` {
@@ -26,12 +32,23 @@ function reasonBytes32(s: string): `0x${string}` {
   return stringToHex(trimmed.slice(0, 31), { size: 32 });
 }
 
-function AddrRow({ label, addr, you }: { label: string; addr: string; you?: boolean }) {
+function AddrRow({
+  label,
+  addr,
+  you,
+  repLink,
+}: {
+  label: string;
+  addr: string;
+  you?: boolean;
+  repLink?: boolean;
+}) {
   return (
     <div className="kv">
       <span className="muted">{label}</span>
-      <span className="mono">
-        {addr === zeroAddress ? "—" : shortAddr(addr)}
+      <span>
+        <Identity address={addr} linkToRep={repLink && addr !== zeroAddress} />
+        {repLink && addr !== zeroAddress && " ★"}
         {you && <span className="you"> you</span>}
       </span>
     </div>
@@ -55,6 +72,20 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
     abi: erc8183Abi,
     functionName: "getJob",
     args: [jobId],
+  });
+
+  const { data: feePaid, refetch: refetchFeePaid } = useReadContract({
+    address: FEE_ADDRESS,
+    abi: feeAbi,
+    functionName: "feePaid",
+    args: [jobId],
+  });
+  const { data: feeRequired } = useReadContract({
+    address: FEE_ADDRESS,
+    abi: feeAbi,
+    functionName: "feeFor",
+    args: [jobId],
+    query: { enabled: !!job && (job as Job).budget > 0n },
   });
 
   // Track this job in "My jobs" when the connected wallet is a participant.
@@ -116,6 +147,19 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
         functionName: "setProvider",
         args: [jobId, providerInput.trim() as `0x${string}`],
       });
+    });
+
+  const payFee = () =>
+    run("payFee", async () => {
+      const hash = await writeContractAsync({
+        address: FEE_ADDRESS,
+        abi: feeAbi,
+        functionName: "payFee",
+        args: [jobId],
+        value: feeRequired ?? 0n,
+      });
+      await publicClient!.waitForTransactionReceipt({ hash });
+      await refetchFeePaid();
     });
 
   const fund = () =>
@@ -192,6 +236,7 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
 
   const canFund =
     status === "Open" && isClient && j.provider !== zeroAddress && j.budget > 0n && !t.expired;
+  const feeIsPaid = feePaid === true;
 
   return (
     <div className="detail">
@@ -209,7 +254,7 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
 
       <div className="kv-grid">
         <AddrRow label="Client" addr={j.client} you={isClient} />
-        <AddrRow label="Provider" addr={j.provider} you={isProvider} />
+        <AddrRow label="Provider" addr={j.provider} you={isProvider} repLink />
         <AddrRow label="Evaluator" addr={j.evaluator} you={isEvaluator} />
         <div className="kv">
           <span className="muted">Expires</span>
@@ -247,7 +292,8 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
           {/* ── Open ── */}
           {status === "Open" && isClient && j.provider === zeroAddress && (
             <div className="action-box">
-              <h3>Assign a provider</h3>
+              <h3>Assign a provider directly</h3>
+              <p className="muted small">Already know who's doing this? Skip the applicant list.</p>
               <div className="row">
                 <input
                   placeholder="0x… provider address"
@@ -259,6 +305,9 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
                 </button>
               </div>
             </div>
+          )}
+          {status === "Open" && j.provider === zeroAddress && !t.expired && (
+            <ApplicationsPanel jobId={jobId} isClient={isClient} clientAddress={j.client} onAssigned={refetch} />
           )}
           {status === "Open" && isProvider && (
             <div className="action-box">
@@ -372,7 +421,42 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
             </div>
           )}
 
-          {!isClient && !isProvider && !isEvaluator && !t.expired && (
+          {/* ── Judged (Completed/Rejected) ── */}
+          {status === "Completed" && isClient && !feeIsPaid && (
+            <div className="action-box fee-box">
+              <h3>Platform fee — 1%</h3>
+              <p className="muted small">
+                The judge approved the work and the provider got paid — a fixed 1% of the budget now
+                goes to the judge too. This only becomes payable on a successful outcome: if the job
+                had been rejected or expired instead, there'd be nothing to pay. Separate from
+                tipping — tips are optional and come after this, if you're happy with the verdict.
+              </p>
+              <button
+                className="btn btn-primary"
+                disabled={busy !== null || feeRequired === undefined}
+                onClick={payFee}
+              >
+                {busy === "payFee"
+                  ? "Paying fee…"
+                  : feeRequired !== undefined
+                    ? `Pay 1% fee (${formatEther(feeRequired)} USDC)`
+                    : "Loading fee…"}
+              </button>
+            </div>
+          )}
+          {(status === "Completed" || status === "Rejected") && (isClient || isProvider) && (
+            <StarRating jobId={jobId} />
+          )}
+          {status === "Completed" && (isClient || isProvider) && <TipJudge jobId={jobId} />}
+          {(status === "Completed" || status === "Rejected") && (isClient || isProvider) && (
+            <Erc8004Feedback jobId={jobId} judge={j.evaluator} outcome={status} />
+          )}
+
+          {!isClient &&
+            !isProvider &&
+            !isEvaluator &&
+            !t.expired &&
+            !(status === "Open" && j.provider === zeroAddress) && (
             <div className="hint">
               You're not a participant in this job — connect as the client, provider, or evaluator to act.
             </div>
