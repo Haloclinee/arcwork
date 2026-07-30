@@ -59,6 +59,31 @@ function ThemeToggle() {
   );
 }
 
+function NavJump() {
+  const [value, setValue] = useState("");
+  return (
+    <form
+      className="jump"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const id = value.trim().replace(/^#/, "");
+        if (/^\d+$/.test(id)) {
+          window.location.hash = `#/job/${id}`;
+          setValue("");
+        }
+      }}
+    >
+      <input
+        placeholder="Go to job #…"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        inputMode="numeric"
+      />
+      <kbd>↵</kbd>
+    </form>
+  );
+}
+
 function useHashRoute(): string {
   const [hash, setHash] = useState(() => window.location.hash || "#/");
   useEffect(() => {
@@ -148,8 +173,8 @@ export default function App() {
           <a href="#/mine" className={route === "#/mine" ? "active" : ""}>My jobs</a>
           <a href="#/judges" className={route === "#/judges" ? "active" : ""}>Judges</a>
           <a href="#/arena" className={route === "#/arena" ? "active" : ""}>Arena</a>
+          <NavJump />
           <a href="#/new" className="btn btn-primary small-btn">Post a job</a>
-          <ThemeToggle />
           <ConnectButton />
         </nav>
         <button
@@ -188,6 +213,7 @@ export default function App() {
         <button className="footer-help" onClick={() => setShowTutorial(true)}>how this works</button>
       </footer>
       {showTutorial && <TutorialModal onClose={closeTutorial} />}
+      <ThemeToggle />
     </div>
   );
 }

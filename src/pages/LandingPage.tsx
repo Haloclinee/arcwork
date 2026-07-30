@@ -178,7 +178,10 @@ export function LandingPage() {
         <section className="section">
           <div className="section-head">
             <h2>Latest jobs</h2>
-            <a className="win-rate" href="#/jobs">See all →</a>
+            <p className="muted">
+              {counter ? counter.toLocaleString("en-US") : "159,000+"} jobs created on the canonical
+              ERC-8183 contract · <a className="win-rate" href="#/jobs">See all →</a>
+            </p>
           </div>
           <div className="grid">
             {jobs.slice(0, 6).map((j) => (
