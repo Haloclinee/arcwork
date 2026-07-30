@@ -101,3 +101,4 @@ You'll need testnet USDC for gas and budgets: [faucet.circle.com](https://faucet
 
 - [ ] Milestone payments — would require deploying our own escrow contract (the canonical ERC-8183 deployment only supports single-payout jobs), so this is a bigger positioning decision, not a quick add
 - [ ] Encrypted deliverables for private work (client's public key)
+- [ ] Expand from 4 to 12 judges, moving from local Ollama models to OpenRouter — see [ROADMAP.md](ROADMAP.md)
