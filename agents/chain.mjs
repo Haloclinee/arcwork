@@ -224,3 +224,82 @@ export const jobSubmittedEvent = {
     { name: "deliverable", type: "bytes32", indexed: false },
   ],
 };
+
+// JobApplications — lets any wallet signal interest in an open, unassigned
+// job; the client still assigns via the canonical contract's setProvider().
+export const APPLICATIONS_ADDRESS = "0xC360CFD9B9F44930aDF9da7830C67958864B1eA2";
+
+export const applicationsAbi = [
+  {
+    type: "function",
+    name: "applyToJob",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "withdraw",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "getApplicants",
+    stateMutability: "view",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [{ name: "", type: "address[]" }],
+  },
+  {
+    type: "function",
+    name: "hasApplied",
+    stateMutability: "view",
+    inputs: [
+      { name: "", type: "uint256" },
+      { name: "", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+];
+
+// JudgeFee — mandatory 1% platform fee, client pays the judge once the job
+// completes (payFee reverts otherwise).
+export const FEE_ADDRESS = "0x7E691a8b5F4Fb1a4FF4647337b851378B637585E";
+
+export const feeAbi = [
+  {
+    type: "function",
+    name: "feeFor",
+    stateMutability: "view",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "payFee",
+    stateMutability: "payable",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "feePaid",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+];
+
+// JudgeTips — voluntary tip to the judge, only once a job has completed.
+export const TIPS_ADDRESS = "0xE0359C02Ab0d500C3496c2E5D080676d022E9eFa";
+
+export const tipsAbi = [
+  {
+    type: "function",
+    name: "tipJudge",
+    stateMutability: "payable",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [],
+  },
+];

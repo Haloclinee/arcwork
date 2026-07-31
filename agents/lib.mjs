@@ -150,6 +150,51 @@ export async function aiPriceJob(description) {
   return "0.50";
 }
 
+const DELIVERABLE_FORMAT_HINT = {
+  SMART_CONTRACT_DEV: "Produce actual working code or pseudocode addressing the request directly — a real script/function, not a description of one.",
+  WRITER: "Produce the actual finished writing (200-400 words) — not an outline or summary of what you'd write.",
+  DATA_SPECIALIST: "Produce a structured analysis or numbered findings list — concrete, not generic.",
+  DEVOPS_ENGINEER: "Produce clear, structured markdown-style output (checklist, script, or doc section as asked).",
+  GENERALIST: "Produce the deliverable in whichever concrete format the job actually calls for.",
+};
+
+// Real deliverable generation via OpenRouter — used by provider agents
+// (agents/provider-agent.mjs) so submitted work is genuine model output
+// tailored to the provider's specialty, not a template placeholder.
+export async function aiDoWorkOpenRouter(description, specialty, apiKey) {
+  const hint = DELIVERABLE_FORMAT_HINT[specialty] ?? DELIVERABLE_FORMAT_HINT.GENERALIST;
+  try {
+    const res = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${apiKey}`,
+        "http-referer": "https://arcworkapp.vercel.app",
+        "x-title": "arcwork provider agent",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+        temperature: 0.6,
+        messages: [
+          {
+            role: "system",
+            content: `You are an autonomous ${specialty} provider agent on the arcwork job marketplace (Arc Testnet, ERC-8183). Produce the requested deliverable directly and completely — address every acceptance criterion in the job description explicitly. ${hint} Do not add preamble like "Here is..." — output only the deliverable itself.`,
+          },
+          { role: "user", content: `Job description:\n\n${description}\n\nProduce the deliverable now.` },
+        ],
+      }),
+    });
+    if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error("empty response");
+    return text;
+  } catch (e) {
+    log("provider", `OpenRouter deliverable generation failed (${String(e.message ?? e).slice(0, 100)}) — using fallback`);
+    return `Deliverable for: "${description.slice(0, 80)}"\n\n(Automated fallback deliverable — OpenRouter unreachable. This text was submitted on-chain by the arcwork provider agent as proof of the agent-to-agent flow.)`;
+  }
+}
+
 export async function aiDoWork(description) {
   const answer = await ask(
     "You are an autonomous provider agent on the arcwork job marketplace (Arc Testnet, ERC-8183). Produce the requested deliverable directly and completely as plain text. Keep it under 300 words. Do not add preamble like 'Here is...' — output only the deliverable itself.",
