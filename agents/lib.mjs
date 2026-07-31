@@ -8,6 +8,7 @@ import {
   hexToString,
   http,
   keccak256,
+  stringToHex,
   toHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -258,5 +259,66 @@ export async function aiEvaluateOpenRouter(description, deliverable, model, apiK
     log("evaluator", `OpenRouter unreachable for ${model} (${String(e.message ?? e).slice(0, 100)}) — defaulting to approve`);
     return { approve: true, reason: "auto-approved (OpenRouter evaluator unreachable)", model };
   }
+}
+
+// ── Single judging pass — shared by the long-running local process
+// (evaluator.mjs, which loops this + sleep) and the stateless serverless
+// cron endpoint (api/evaluate.mjs, which runs this once per invocation).
+// No in-memory dedup needed across calls: a job already judged is no longer
+// "Submitted", so a re-scan is a correctness no-op, just wasted reads.
+export async function judgeOnce(judgeDef, evaluate) {
+  const pk = process.env[judgeDef.pkEnv];
+  if (!pk) return { key: judgeDef.key, skipped: "no pkEnv set", judged: 0 };
+
+  const { account, pub, wallet } = makeClients(pk);
+  const tag = `judge:${judgeDef.key}`;
+  let judged = 0;
+
+  const latest = await pub.getBlockNumber();
+  const logs = await pub.getLogs({
+    address: ERC8183_ADDRESS,
+    event: jobCreatedEvent,
+    args: { evaluator: account.address },
+    fromBlock: latest > 9500n ? latest - 9500n : 1n,
+    toBlock: latest,
+  });
+
+  for (const l of logs) {
+    if (l.args.jobId === undefined) continue;
+    const jobId = l.args.jobId;
+    const job = await getJob(pub, jobId);
+    if (JOB_STATUS[job.status] !== "Submitted") continue;
+
+    log(tag, `job #${jobId}: submission ready — recovering deliverable…`);
+    const recovered = await recoverDeliverable(pub, jobId, l.blockNumber);
+    const content = recovered?.content;
+    if (!content) {
+      log(tag, `job #${jobId}: no on-chain content found — rejecting (cannot judge blind)`);
+      await writeAndWait(pub, wallet, {
+        address: ERC8183_ADDRESS,
+        abi: erc8183Abi,
+        functionName: "reject",
+        args: [jobId, stringToHex("no-content", { size: 32 }), "0x"],
+      });
+      judged++;
+      continue;
+    }
+
+    log(tag, `job #${jobId}: asking ${judgeDef.model} to judge…`);
+    const verdict = await evaluate(job.description, content, judgeDef.model);
+    log(tag, `job #${jobId}: verdict = ${verdict.approve ? "APPROVE" : "REJECT"} — "${verdict.reason}"`);
+
+    const reasonHex = stringToHex(verdict.reason.slice(0, 31), { size: 32 });
+    await writeAndWait(pub, wallet, {
+      address: ERC8183_ADDRESS,
+      abi: erc8183Abi,
+      functionName: verdict.approve ? "complete" : "reject",
+      args: [jobId, reasonHex, "0x"],
+    });
+    log(tag, `job #${jobId}: ${verdict.approve ? "payment released to provider" : "escrow refunded to client"} ✓`);
+    judged++;
+  }
+
+  return { key: judgeDef.key, judged };
 }
 

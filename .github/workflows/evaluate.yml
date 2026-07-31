@@ -1,0 +1,26 @@
+name: Judge submitted jobs
+
+# Vercel's own Cron Jobs only run once a day on the Hobby plan — far too
+# slow for a job marketplace, so this repo drives the judging endpoint
+# (api/evaluate.mjs) from GitHub Actions instead. GitHub's scheduler is
+# best-effort too (can slip a few minutes under load), which is fine here.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call evaluate endpoint
+        run: |
+          status=$(curl -s -o /tmp/out.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.EVALUATE_URL }}")
+          cat /tmp/out.json
+          echo
+          if [ "$status" != "200" ]; then
+            echo "evaluate endpoint returned $status"
+            exit 1
+          fi
