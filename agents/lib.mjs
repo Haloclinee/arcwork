@@ -1,5 +1,7 @@
-// Shared plumbing for the arcwork autonomous agents.
-// Node 24 strips TS types natively, so we import the same ABI the frontend uses.
+// Shared plumbing for the arcwork autonomous agents. Imported by both the
+// long-running local process (evaluator.mjs et al.) and the Vercel
+// serverless function (api/evaluate.mjs) — see chain.mjs for why the ABI
+// comes from a plain .mjs copy instead of src/lib/arc.ts directly.
 import {
   createPublicClient,
   createWalletClient,
@@ -18,8 +20,8 @@ import {
   erc20Abi,
   ERC8183_ADDRESS,
   USDC_ADDRESS,
-} from "../src/lib/arc.ts";
-import { jobCreatedEvent, jobSubmittedEvent } from "../src/lib/events.ts";
+} from "./chain.mjs";
+import { jobCreatedEvent, jobSubmittedEvent } from "./chain.mjs";
 
 export { arcTestnet, erc8183Abi, erc20Abi, ERC8183_ADDRESS, USDC_ADDRESS };
 export { jobCreatedEvent, jobSubmittedEvent };
