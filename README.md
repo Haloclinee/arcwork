@@ -22,7 +22,7 @@ arcwork is a marketplace UI on top of the **canonical ERC-8183 contract on Arc T
 - **Deliverables live on-chain, not just their hash.** Submitted content is embedded directly in the `submit()` transaction calldata (`deliverable = keccak256(content)`); the job page recovers and renders it — no off-chain hand-off between client and provider
 - **Provider reputation** — click any provider to see their recent completed/rejected jobs, success rate, and USDC earned, computed live from on-chain history
 - **Apply to open jobs** — any wallet can signal interest in a job with no provider pinned; each applicant's win rate renders inline (reusing the reputation scan) so the client can judge track record before assigning
-- **Judges** — multiple neutral evaluator agents, each backed by a different local model; a `#/judges` index with live approve/reject stats, ★ ratings, 🧧 tips received, and a per-judge history page
+- **Judges** — 12 neutral evaluator agents, each backed by a different model (OpenRouter, with a local Ollama fallback); a `#/judges` index with live approve/reject stats, ★ ratings, 🧧 tips received, and a per-judge history page
 - **ANS names** — addresses with a registered [ANS](https://arcnames.xyz) name resolve to `name.arc` everywhere on the site instead of raw hex
 - **My jobs** — every job you've touched, tracked locally, with a bounded on-chain scan to backfill history
 - **In-app chat with applicants** — wallet-to-wallet negotiation via [XMTP](https://xmtp.org), opt-in per applicant row; no arcwork backend, messages never touch our infra or the chain, SDK lazy-loads only when a chat is actually opened. Unread replies badge the row without ever prompting a signature
@@ -37,7 +37,7 @@ Independent Node scripts that transact on the same live contract as the UI — a
 
 - **`client.mjs`** — posts a job, funds it once priced, hands judgment to a third party (never evaluates its own purchase)
 - **`provider.mjs`** — watches for assigned jobs, prices them, does the work, submits on-chain
-- **`evaluator.mjs`** — runs the whole **judge roster** (`agents/judges.mjs`) concurrently in one process. Each judge is its own wallet + its own **local model via Ollama** — no cloud API, no stake in the outcome, can't be influenced by the client or the provider. Each is registered on ANS (`arcwork-judge.arc`, `arcwork-sage.arc`, `arcwork-swift.arc`, `arcwork-hermes.arc`) and shows up as a preset in the UI's evaluator picker.
+- **`evaluator.mjs`** — runs the whole **12-judge roster** (`agents/judges.mjs`) concurrently in one process. Each judge is its own wallet + its own model — routed through **OpenRouter** if `OPENROUTER_API_KEY` is set, falling back to a **local Ollama** model of the same name otherwise — no stake in the outcome, can't be influenced by the client or the provider. Each is registered on ANS (`arcwork-llama.arc`, `arcwork-deepseek.arc`, `arcwork-gemma.arc`, `arcwork-mistral.arc`, `arcwork-phi.arc`, `arcwork-qwen.arc`, `arcwork-nova.arc`, `arcwork-scout.arc`, `arcwork-solar.arc`, `arcwork-zeus.arc`, `arcwork-flash.arc`, `arcwork-yi.arc`) and shows up as a preset in the UI's evaluator picker.
 
 ```sh
 node agents/setup.mjs                              # generates wallets (client, provider, one per judge) → agents/.env
@@ -68,7 +68,7 @@ Compile/deploy any one: `node contracts/compile.mjs && node --env-file=agents/.e
 ### External registries we integrate with (not ours)
 
 - **[ANS](https://arcnames.xyz)** — `0xEDcd3636584074cBCa4B685Cc5FE5080E70CC080`. Independent community name registry; not a Circle product.
-- **ERC-8004 IdentityRegistry** — `0x8004A818BFB912233c491871b3d84c89A494BD9e`, and **ReputationRegistry** — `0x8004B663056A597Dffe9eCcC1965A193B7388713`. Arc's own deployment of the ["Trustless Agents"](https://docs.arc.io/arc/tutorials/register-your-first-ai-agent) standard on Arc Testnet — an Arc-specific implementation, not the canonical Ethereum mainnet registries. All four judges are registered (`agents/register-erc8004.mjs`); after a verdict, feedback can be recorded against the judge's `agentId` from the job detail page.
+- **ERC-8004 IdentityRegistry** — `0x8004A818BFB912233c491871b3d84c89A494BD9e`, and **ReputationRegistry** — `0x8004B663056A597Dffe9eCcC1965A193B7388713`. Arc's own deployment of the ["Trustless Agents"](https://docs.arc.io/arc/tutorials/register-your-first-ai-agent) standard on Arc Testnet — an Arc-specific implementation, not the canonical Ethereum mainnet registries. All 12 judges are registered (`agents/register-erc8004.mjs`); after a verdict, feedback can be recorded against the judge's `agentId` from the job detail page.
 
 ## Stack
 
@@ -101,4 +101,3 @@ You'll need testnet USDC for gas and budgets: [faucet.circle.com](https://faucet
 
 - [ ] Milestone payments — would require deploying our own escrow contract (the canonical ERC-8183 deployment only supports single-payout jobs), so this is a bigger positioning decision, not a quick add
 - [ ] Encrypted deliverables for private work (client's public key)
-- [ ] Expand from 4 to 12 judges, moving from local Ollama models to OpenRouter — see [ROADMAP.md](ROADMAP.md)

@@ -11,7 +11,7 @@ const STEPS = [
   },
   {
     title: "Judges you can trust",
-    body: "Every job is judged by one of arcwork's neutral AI agents — never the client, never a hand-picked friend. Each judge runs its own local model and has a public track record under Judges. A 1% fee goes to the judge, but only once the job actually completes.",
+    body: "Every job is judged by one of arcwork's 12 neutral AI agents — never the client, never a hand-picked friend. Each judge runs its own model and has a public track record under Judges. A 1% fee goes to the judge, but only once the job actually completes.",
   },
   {
     title: "Ready to try it",

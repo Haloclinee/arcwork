@@ -194,21 +194,69 @@ export async function aiEvaluateLocal(description, deliverable, model = DEFAULT_
       `Job description:\n${description}\n\nSubmitted deliverable:\n${deliverable}\n\nYour verdict:`,
       model,
     );
-    // Reasoning models (e.g. deepseek-r1) may prefix output with <think>...</think>
-    // or other scratch text — search all lines for the verdict line, from the end
-    // (the model's final decision), not just the first match.
-    const lines = raw.trim().split("\n");
-    const line = [...lines].reverse().find((l) => /(APPROVE|REJECT)/i.test(l)) ?? raw.trim();
-    const approveIdx = line.search(/APPROVE/i);
-    const rejectIdx = line.search(/REJECT/i);
-    const approve = approveIdx !== -1 && (rejectIdx === -1 || approveIdx < rejectIdx);
-    const reason =
-      line.replace(/^[\s*_-]*\**(APPROVE|REJECT)\**:?\s*/i, "").trim().slice(0, 200) ||
-      (approve ? "meets requirements" : "does not meet requirements");
-    return { approve, reason, model };
+    return parseVerdict(raw, model);
   } catch (e) {
     log("evaluator", `Ollama unreachable for ${model} (${String(e.message ?? e).slice(0, 100)}) — defaulting to approve`);
     return { approve: true, reason: "auto-approved (local evaluator model unreachable)", model };
+  }
+}
+
+// Reasoning models (e.g. deepseek-r1) may prefix output with <think>...</think>
+// or other scratch text — search all lines for the verdict line, from the end
+// (the model's final decision), not just the first match.
+function parseVerdict(raw, model) {
+  const lines = raw.trim().split("\n");
+  const line = [...lines].reverse().find((l) => /(APPROVE|REJECT)/i.test(l)) ?? raw.trim();
+  const approveIdx = line.search(/APPROVE/i);
+  const rejectIdx = line.search(/REJECT/i);
+  const approve = approveIdx !== -1 && (rejectIdx === -1 || approveIdx < rejectIdx);
+  const reason =
+    line.replace(/^[\s*_-]*\**(APPROVE|REJECT)\**:?\s*/i, "").trim().slice(0, 200) ||
+    (approve ? "meets requirements" : "does not meet requirements");
+  return { approve, reason, model };
+}
+
+// ── OpenRouter evaluator — same neutral-judge contract as aiEvaluateLocal,
+// but routed through OpenRouter so each judge persona can run a different
+// hosted model (agents/judges.mjs) without every operator needing local
+// hardware for 12 different Ollama models. Used when OPENROUTER_API_KEY is
+// set in agents/.env; evaluator.mjs falls back to aiEvaluateLocal otherwise.
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+export async function aiEvaluateOpenRouter(description, deliverable, model, apiKey) {
+  try {
+    const res = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${apiKey}`,
+        "http-referer": "https://arcworkapp.vercel.app",
+        "x-title": "arcwork judge",
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.1,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a neutral, impartial evaluator judging whether a submitted deliverable satisfies a job on an on-chain escrow marketplace. You are not the client or the provider — you have no stake in the outcome. Judge only on merit: does the deliverable reasonably address what the job asked for? You may think it through, but your FINAL line must be EXACTLY 'APPROVE: <short reason>' or 'REJECT: <short reason>' — nothing after it.",
+          },
+          {
+            role: "user",
+            content: `Job description:\n${description}\n\nSubmitted deliverable:\n${deliverable}\n\nYour verdict:`,
+          },
+        ],
+      }),
+    });
+    if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content ?? "";
+    if (!raw) throw new Error("empty response");
+    return parseVerdict(raw, model);
+  } catch (e) {
+    log("evaluator", `OpenRouter unreachable for ${model} (${String(e.message ?? e).slice(0, 100)}) — defaulting to approve`);
+    return { approve: true, reason: "auto-approved (OpenRouter evaluator unreachable)", model };
   }
 }
 

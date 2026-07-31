@@ -1,10 +1,12 @@
 // Runs the entire arcwork judge roster (agents/judges.mjs) concurrently in
-// one process — each judge is its own wallet + its own local model, watching
-// only the jobs assigned to it. No judge can see or influence another's
-// verdict, and none of them call out to a cloud API.
+// one process — each judge is its own wallet + its own model, watching only
+// the jobs assigned to it. No judge can see or influence another's verdict.
 //
-// Requires Ollama running locally with every judge's model pulled:
-//   ollama pull llama3.1 && ollama pull deepseek-r1:8b && ...
+// Judging backend is picked once, globally, at startup:
+//   - OPENROUTER_API_KEY set in agents/.env → every judge runs its
+//     OpenRouter model (agents/judges.mjs `model` is an OpenRouter model ID)
+//   - not set → falls back to a local Ollama model of the same name:
+//       ollama pull llama3.1 && ollama pull deepseek-r1:8b && ...
 //
 // Run:  node --env-file=agents/.env agents/evaluator.mjs
 import { stringToHex } from "viem";
@@ -13,6 +15,7 @@ import {
   erc8183Abi,
   JOB_STATUS,
   aiEvaluateLocal,
+  aiEvaluateOpenRouter,
   getJob,
   jobCreatedEvent,
   log,
@@ -22,6 +25,11 @@ import {
   writeAndWait,
 } from "./lib.mjs";
 import { JUDGES } from "./judges.mjs";
+
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const evaluate = OPENROUTER_API_KEY
+  ? (description, deliverable, model) => aiEvaluateOpenRouter(description, deliverable, model, OPENROUTER_API_KEY)
+  : aiEvaluateLocal;
 
 async function runJudge(judgeDef) {
   const pk = process.env[judgeDef.pkEnv];
@@ -69,7 +77,7 @@ async function runJudge(judgeDef) {
         }
 
         log(tag, `job #${jobId}: asking ${judgeDef.model} to judge…`);
-        const verdict = await aiEvaluateLocal(job.description, content, judgeDef.model);
+        const verdict = await evaluate(job.description, content, judgeDef.model);
         log(tag, `job #${jobId}: verdict = ${verdict.approve ? "APPROVE" : "REJECT"} — "${verdict.reason}"`);
 
         const reasonHex = stringToHex(verdict.reason.slice(0, 31), { size: 32 });
@@ -88,5 +96,8 @@ async function runJudge(judgeDef) {
   }
 }
 
-log("evaluator", `starting ${JUDGES.length} judge(s): ${JUDGES.map((j) => j.key).join(", ")}`);
+log(
+  "evaluator",
+  `starting ${JUDGES.length} judge(s) via ${OPENROUTER_API_KEY ? "OpenRouter" : "local Ollama"}: ${JUDGES.map((j) => j.key).join(", ")}`,
+);
 await Promise.all(JUDGES.map(runJudge));

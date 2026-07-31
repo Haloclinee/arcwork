@@ -89,9 +89,9 @@ export function JudgesPage() {
         <div>
           <h1>Judges</h1>
           <p className="muted">
-            Independent evaluator agents. Each judges submissions with its own locally-run model —
-            no cloud calls, no stake in the client's or provider's outcome. Pick one when posting a
-            job, or bring your own address.
+            12 independent evaluator agents, each judging with a different model — no stake in
+            the client's or provider's outcome, and none of them see how the others voted. Pick
+            one when posting a job, or bring your own address.
           </p>
         </div>
       </div>

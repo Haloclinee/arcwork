@@ -21,6 +21,11 @@ if (!existsSync(ENV_PATH)) {
     "# Optional: set to use Claude instead of local Ollama for provider/client reasoning",
     "# ANTHROPIC_API_KEY=sk-ant-...",
     "",
+    "# Optional: set to judge via OpenRouter instead of local Ollama models —",
+    "# lets each judge in judges.mjs run a different hosted model with no local",
+    "# hardware required. Get a key at https://openrouter.ai/keys",
+    "# OPENROUTER_API_KEY=sk-or-...",
+    "",
   ];
   writeFileSync(ENV_PATH, lines.join("\n"));
   console.log("Generated new agent wallets → agents/.env");
@@ -77,10 +82,14 @@ Fund every address above with Arc Testnet USDC (gas + budget):
 The CLIENT needs ~2 USDC (funds job budgets); everyone else needs ~0.5 USDC
 each for gas — judges never touch the escrow itself.
 
-Judges evaluate with LOCAL models via Ollama — never a cloud API. Pull them all:
+Judges evaluate via OpenRouter if OPENROUTER_API_KEY is set above (get one at
+https://openrouter.ai/keys) — one hosted model per judge, no local hardware.
+Without it, evaluator.mjs falls back to local Ollama models of the same name:
 ${models.map((m) => `  ollama pull ${m}`).join("\n")}
 
-New judge personas: run agents/register-judges.mjs once to claim their ANS names.
+New judge personas: run agents/register-judges.mjs to claim their ANS names,
+then agents/register-erc8004.mjs to mint their ERC-8004 identities — copy the
+printed addresses/agentIds into src/lib/presets.ts so they show up on the site.
 
 Then run each in its own terminal:
   node --env-file=agents/.env agents/evaluator.mjs   # runs ALL judges concurrently
