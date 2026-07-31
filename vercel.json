@@ -2,6 +2,9 @@
   "functions": {
     "api/evaluate.mjs": {
       "maxDuration": 120
+    },
+    "api/nudge.mjs": {
+      "maxDuration": 120
     }
   }
 }

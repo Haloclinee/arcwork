@@ -202,6 +202,10 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
         functionName: "submit",
         args: [jobId, deliverable, encoded as `0x${string}`],
       });
+      // Best-effort nudge so the judge picks this up in seconds instead of
+      // waiting for the next scheduled sweep — safe to ignore if it fails,
+      // the scheduled judging run still covers it.
+      fetch("/api/nudge", { method: "POST" }).catch(() => {});
     });
 
   const complete = () =>
