@@ -161,6 +161,17 @@ export default function App() {
     setShowTutorial(false);
   }
 
+  // The Arena is a full-screen, chrome-free view — no topbar/nav/footer/
+  // corner actions competing with the canvas. Theme toggle stays available.
+  if (route === "#/arena") {
+    return (
+      <div className="shell shell-fullscreen">
+        <ArenaPage />
+        <ThemeToggle />
+      </div>
+    );
+  }
+
   return (
     <div className="shell">
       <header className="topbar">
@@ -199,8 +210,6 @@ export default function App() {
             <MyJobsPage />
           ) : route === "#/judges" ? (
             <JudgesPage />
-          ) : route === "#/arena" ? (
-            <ArenaPage />
           ) : route === "#/jobs" ? (
             <JobsPage />
           ) : (
