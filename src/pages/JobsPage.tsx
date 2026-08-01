@@ -7,7 +7,7 @@ import { Identity } from "../components/Identity";
 import { EVALUATOR_PRESETS } from "../lib/presets";
 
 const PAGE_SIZE = 12;
-const WIDE_WINDOW = 300; // how far back to scan when a filter is active
+const WIDE_WINDOW = 3000; // how far back to scan when a filter is active
 
 interface Filters {
   statuses: string[]; // subset of JOB_STATUS; [] = all

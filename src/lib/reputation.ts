@@ -3,7 +3,8 @@ import { ERC8183_ADDRESS } from "./arc";
 import { jobCreatedEvent, jobSubmittedEvent } from "./events";
 
 const CHUNK = 9_500n;
-const MAX_CHUNKS = 20; // ≈190k blocks of recent history (public RPC scan cap)
+const MAX_CHUNKS = 120; // ≈1.14M blocks of history (public RPC scan cap is 10k/request)
+const CONCURRENCY = 8; // chunks are independent — fetch in parallel batches, not one at a time
 
 export type HistoryField = "provider" | "evaluator";
 
@@ -36,32 +37,50 @@ export async function scanAddressHistory(
   }
 
   const latest = await client.getBlockNumber();
-  const ids: string[] = [];
-  let chunks = 0;
+
+  // Build every chunk's [fromBlock, toBlock] range up front, then fetch in
+  // parallel batches — chunks are independent reads, no reason to await
+  // them one at a time (that's what made deep history scans feel like they
+  // "didn't find" older jobs: MAX_CHUNKS was small AND the loop was serial).
+  const ranges: { fromBlock: bigint; toBlock: bigint }[] = [];
   for (let i = 0; i < MAX_CHUNKS; i++) {
     const toBlock = latest - CHUNK * BigInt(i);
     if (toBlock < 1n) break;
     let fromBlock = toBlock - CHUNK + 1n;
     if (fromBlock < 1n) fromBlock = 1n;
-    const logs = await (field === "provider"
-      ? client.getLogs({
-          address: ERC8183_ADDRESS,
-          event: jobSubmittedEvent,
-          args: { provider: address },
-          fromBlock,
-          toBlock,
-        })
-      : client.getLogs({
-          address: ERC8183_ADDRESS,
-          event: jobCreatedEvent,
-          args: { evaluator: address } as unknown as { provider?: `0x${string}` },
-          fromBlock,
-          toBlock,
-        }));
-    for (const log of logs) {
-      if (log.args.jobId !== undefined) ids.push(log.args.jobId.toString());
+    ranges.push({ fromBlock, toBlock });
+    if (fromBlock <= 1n) break;
+  }
+
+  const ids: string[] = [];
+  let chunks = 0;
+  for (let i = 0; i < ranges.length; i += CONCURRENCY) {
+    const batch = ranges.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(({ fromBlock, toBlock }) =>
+        field === "provider"
+          ? client.getLogs({
+              address: ERC8183_ADDRESS,
+              event: jobSubmittedEvent,
+              args: { provider: address },
+              fromBlock,
+              toBlock,
+            })
+          : client.getLogs({
+              address: ERC8183_ADDRESS,
+              event: jobCreatedEvent,
+              args: { evaluator: address } as unknown as { provider?: `0x${string}` },
+              fromBlock,
+              toBlock,
+            }),
+      ),
+    );
+    for (const logs of results) {
+      for (const log of logs) {
+        if (log.args.jobId !== undefined) ids.push(log.args.jobId.toString());
+      }
+      chunks++;
     }
-    chunks++;
   }
   ids.sort((a, b) => Number(BigInt(b) - BigInt(a)));
 
