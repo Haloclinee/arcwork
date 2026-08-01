@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import type { Conversation, DecodedMessage } from "@xmtp/browser-sdk";
-import { getLastSeen, getXmtpClient, hasUsedXmtp, markSeen, openDm, peekXmtpClient } from "../lib/xmtp";
+import { getLastSeen, getXmtpClient, hasUsedXmtp, markSeen, openJobChat, peekXmtpClient } from "../lib/xmtp";
 import { shortAddr } from "../lib/format";
 
 const UNREAD_POLL_MS = 20_000;
 
-// Wallet-to-wallet negotiation chat, scoped to one applicant. Opt-in per row
-// (building the XMTP identity needs a wallet signature) rather than eagerly
-// loaded for every applicant. Nothing here touches arcwork's own contracts —
-// it's purely XMTP's network, keyed by the two wallet addresses.
-export function Chat({ peerAddress, label }: { peerAddress: `0x${string}`; label: string }) {
+// Wallet-to-wallet negotiation chat, scoped to one applicant AND one job —
+// each job gets its own thread (see openJobChat), so a client/provider pair
+// that's worked together on several jobs doesn't see one merged history.
+// Opt-in per row (building the XMTP identity needs a wallet signature)
+// rather than eagerly loaded for every applicant. Nothing here touches
+// arcwork's own contracts — it's purely XMTP's network.
+export function Chat({ jobId, peerAddress, label }: { jobId: bigint; peerAddress: `0x${string}`; label: string }) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const [open, setOpen] = useState(false);
@@ -45,12 +47,12 @@ export function Chat({ peerAddress, label }: { peerAddress: `0x${string}`; label
       const client = await peekXmtpClient(address!);
       if (!client || cancelled) return;
       try {
-        const dm = await openDm(client, peerAddress);
+        const dm = await openJobChat(client, jobId, peerAddress);
         await dm.sync();
         const recent = (await dm.messages({ limit: 5n })).filter((m) => typeof m.content === "string");
         const last = recent[recent.length - 1];
         if (!cancelled && last && last.senderInboxId !== client.inboxId) {
-          const lastSeen = getLastSeen(address!, peerAddress);
+          const lastSeen = getLastSeen(address!, jobId, peerAddress);
           setUnread(last.sentAt.getTime() > lastSeen);
         }
       } catch {
@@ -64,7 +66,7 @@ export function Chat({ peerAddress, label }: { peerAddress: `0x${string}`; label
       cancelled = true;
       clearInterval(id);
     };
-  }, [address, peerAddress]);
+  }, [address, jobId, peerAddress]);
 
   async function startChat() {
     if (!address || !walletClient) return;
@@ -74,19 +76,19 @@ export function Chat({ peerAddress, label }: { peerAddress: `0x${string}`; label
     try {
       const client = await getXmtpClient(address, walletClient);
       setMyInboxId(client.inboxId ?? null);
-      const dm = await openDm(client, peerAddress);
+      const dm = await openJobChat(client, jobId, peerAddress);
       setConversation(dm);
       const initial = await dm.messages();
       setMessages(initial);
       setStatus("ready");
-      markSeen(address, peerAddress, Date.now());
+      markSeen(address, jobId, peerAddress, Date.now());
 
       const stream = await dm.stream();
       streamRef.current = stream;
       (async () => {
         for await (const msg of stream) {
           setMessages((prev) => [...prev, msg]);
-          markSeen(address, peerAddress, Date.now());
+          markSeen(address, jobId, peerAddress, Date.now());
         }
       })();
     } catch (e) {

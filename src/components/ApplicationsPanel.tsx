@@ -122,7 +122,7 @@ export function ApplicationsPanel({
                 <WinRateBadge address={a} />
               </div>
               <div className="applicant-actions">
-                {isClient && <Chat peerAddress={a} label="Message applicant" />}
+                {isClient && <Chat jobId={jobId} peerAddress={a} label="Message applicant" />}
                 {isClient && (
                   <button
                     className="btn btn-primary small-btn"
@@ -142,7 +142,7 @@ export function ApplicationsPanel({
 
       {!isClient && address && (
         <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {alreadyApplied && <Chat peerAddress={clientAddress} label="Message client" />}
+          {alreadyApplied && <Chat jobId={jobId} peerAddress={clientAddress} label="Message client" />}
           {alreadyApplied ? (
             <button className="btn btn-ghost" disabled={busy !== null} onClick={withdraw}>
               {busy === "withdraw" ? "Withdrawing…" : "Withdraw my application"}

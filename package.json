@@ -24,7 +24,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "@xmtp/node-sdk": "^6.0.0",
+    "@xmtp/node-sdk": "^6.1.0",
     "oxlint": "^1.71.0",
     "solc": "^0.8.28",
     "typescript": "~6.0.2",
