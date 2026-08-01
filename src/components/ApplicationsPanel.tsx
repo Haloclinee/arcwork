@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAccount, usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
 import { APPLICATIONS_ADDRESS, applicationsAbi } from "../lib/applications";
-import { ERC8183_ADDRESS, erc8183Abi } from "../lib/arc";
+import { arcTestnet, ERC8183_ADDRESS, erc8183Abi } from "../lib/arc";
 import { getXmtpClient } from "../lib/xmtp";
 import { Identity } from "./Identity";
 import { WinRateBadge } from "./WinRateBadge";
@@ -66,6 +66,7 @@ export function ApplicationsPanel({
         abi: applicationsAbi,
         functionName: "applyToJob",
         args: [jobId],
+        chainId: arcTestnet.id,
       });
       await publicClient!.waitForTransactionReceipt({ hash });
       // Best-effort: register this wallet's XMTP inbox now, so the client
@@ -84,6 +85,7 @@ export function ApplicationsPanel({
         abi: applicationsAbi,
         functionName: "withdraw",
         args: [jobId],
+        chainId: arcTestnet.id,
       });
       await publicClient!.waitForTransactionReceipt({ hash });
     });
@@ -95,6 +97,7 @@ export function ApplicationsPanel({
         abi: erc8183Abi,
         functionName: "setProvider",
         args: [jobId, applicant],
+        chainId: arcTestnet.id,
       });
       await publicClient!.waitForTransactionReceipt({ hash });
       onAssigned?.();

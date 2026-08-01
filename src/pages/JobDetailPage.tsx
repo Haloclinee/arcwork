@@ -7,6 +7,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import {
+  arcTestnet,
   ERC8183_ADDRESS,
   USDC_ADDRESS,
   USDC_DECIMALS,
@@ -124,7 +125,11 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
   }
 
   async function sendAndWait(args: Parameters<typeof writeContractAsync>[0]) {
-    const hash = await writeContractAsync(args);
+    // Pin the target chain explicitly — without this, wagmi submits to
+    // whatever network the wallet currently has active, which silently
+    // prompts fee estimation in ETH on mainnet if the wallet drifted off
+    // Arc Testnet (e.g. reconnected after using another dapp).
+    const hash = await writeContractAsync({ ...args, chainId: arcTestnet.id });
     await publicClient!.waitForTransactionReceipt({ hash });
   }
 
@@ -157,6 +162,7 @@ export function JobDetailPage({ jobId }: { jobId: bigint }) {
         functionName: "payFee",
         args: [jobId],
         value: feeRequired ?? 0n,
+        chainId: arcTestnet.id,
       });
       await publicClient!.waitForTransactionReceipt({ hash });
       await refetchFeePaid();

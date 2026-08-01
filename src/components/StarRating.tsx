@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { RATINGS_ADDRESS, ratingsAbi } from "../lib/ratings";
+import { arcTestnet } from "../lib/arc";
 
 // Lets the connected wallet (client or provider of a judged job) rate the
 // judge 1-5 stars via the JudgeRatings companion contract. Shown on the job
@@ -30,6 +31,7 @@ export function StarRating({ jobId }: { jobId: bigint }) {
         abi: ratingsAbi,
         functionName: "rateJudge",
         args: [jobId, stars],
+        chainId: arcTestnet.id,
       });
       await publicClient!.waitForTransactionReceipt({ hash });
       await refetch();

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { decodeEventLog, isAddress, zeroAddress } from "viem";
 import { useAccount, usePublicClient, useWalletClient, useWriteContract } from "wagmi";
-import { ERC8183_ADDRESS, erc8183Abi } from "../lib/arc";
+import { arcTestnet, ERC8183_ADDRESS, erc8183Abi } from "../lib/arc";
 import { recordJob } from "../lib/myjobs";
 import { EVALUATOR_PRESETS } from "../lib/presets";
 import { getXmtpClient } from "../lib/xmtp";
@@ -59,6 +59,11 @@ export function CreateJobPage() {
           description.trim(),
           zeroAddress, // no hook
         ],
+        // Pin the chain explicitly — without this, wagmi submits to
+        // whatever network the wallet currently has active, which can
+        // silently prompt fee estimation in ETH on mainnet if the wallet
+        // drifted off Arc Testnet.
+        chainId: arcTestnet.id,
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       let jobId: bigint | null = null;

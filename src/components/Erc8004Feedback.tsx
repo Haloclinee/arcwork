@@ -3,6 +3,7 @@ import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { keccak256, toHex } from "viem";
 import { ERC8004_REPUTATION_ADDRESS, erc8004ReputationAbi } from "../lib/erc8004";
 import { EVALUATOR_PRESETS } from "../lib/presets";
+import { arcTestnet } from "../lib/arc";
 
 const seenKey = (jobId: bigint, addr: string) => `arcwork:erc8004:feedback:${jobId}:${addr.toLowerCase()}`;
 
@@ -43,6 +44,7 @@ export function Erc8004Feedback({
         abi: erc8004ReputationAbi,
         functionName: "giveFeedback",
         args: [preset!.agentId, score, 0, "job-outcome", "", "", `arcwork job #${jobId}: ${outcome}`, feedbackHash],
+        chainId: arcTestnet.id,
       });
       await publicClient!.waitForTransactionReceipt({ hash });
       try {

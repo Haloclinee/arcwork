@@ -2,6 +2,7 @@ import { useState } from "react";
 import { formatEther, parseEther } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { TIPS_ADDRESS, tipsAbi } from "../lib/tips";
+import { arcTestnet } from "../lib/arc";
 
 const PRESETS = ["0.01", "0.05", "0.1"];
 
@@ -30,6 +31,7 @@ export function TipJudge({ jobId }: { jobId: bigint }) {
         functionName: "tipJudge",
         args: [jobId],
         value,
+        chainId: arcTestnet.id,
       });
       await publicClient!.waitForTransactionReceipt({ hash });
       setSent(amount);
