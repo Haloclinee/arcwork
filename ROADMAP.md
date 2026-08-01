@@ -36,3 +36,10 @@ A 5-client / 5-provider autonomous swarm (`agents/client-agent.mjs`, `agents/pro
 exists and was run once end-to-end on Arc Testnet — see `docs/experiments/2026-07-31-swarm-run.md`
 for the results. Re-running it just needs the swarm wallets refunded (they drain client-side
 USDC quickly since job budgets recycle one-way from client to provider).
+
+## README rewrite — illustrated, narrative style — shipped
+
+Rewritten in the style of [CryptoDombili/veilforge](https://github.com/CryptoDombili/veilforge)
+(reference for tone/structure, not content): trust/architecture framing before setup, an ASCII
+flow diagram, real screenshots from the live site under `docs/screenshots/`, judge/model table,
+tighter feature list.
