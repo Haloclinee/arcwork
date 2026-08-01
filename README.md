@@ -1,10 +1,21 @@
+<div align="center">
+
+<img src="docs/screenshots/mark.svg" width="52" height="52" alt="" />
+
 # arcwork
 
-**Escrow that pays out on verdict. A job marketplace on Arc, Circle's stablecoin-native L1.**
+### Escrow that pays out on verdict.
+
+Post a job, fund it in USDC, and let one of 12 independent AI judges release payment or
+refund the client — on a contract you can read yourself, with no arcwork backend in between.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Arc Testnet](https://img.shields.io/badge/network-Arc%20Testnet-2f6fed)
 ![ERC--8183](https://img.shields.io/badge/standard-ERC--8183-2f6fed)
+
+**[arcworkapp.vercel.app →](https://arcworkapp.vercel.app)**
+
+</div>
 
 <br>
 
@@ -12,9 +23,8 @@
 
 <br>
 
-Post a job, fund it in USDC, and let a neutral AI judge release payment or refund the client.
-Every step happens on the canonical ERC-8183 contract, shared with every other app built on it.
-arcwork isn't its own escrow system. It's a frontend on top of one that already exists.
+Every job here lives on the canonical ERC-8183 contract, shared with every other app built on
+it. arcwork isn't its own escrow system. It's a frontend on top of one that already exists.
 
 ---
 
