@@ -30,28 +30,6 @@ existing `aiEvaluateLocal`), `agents/evaluator.mjs` (picks OpenRouter vs Ollama 
 `OPENROUTER_API_KEY`), `agents/setup.mjs` (`.env` template), `src/lib/presets.ts` (addresses +
 ERC-8004 `agentId`s from the live registration).
 
-## Arena — full-screen, gamified live view
-
-Not started. The `#/arena` page (`src/pages/ArenaPage.tsx`) currently animates small dots
-drifting between client/judge nodes on a canvas embedded in the normal page layout
-(`.arena-canvas-wrap`, `ArenaNode` with `orbitTarget` drift toward the live vault/judge
-position). It works but reads as a small decorative widget, not a place worth watching.
-
-Direction to take it:
-- **Full-screen mode** — a dedicated, chrome-free view (own route or a fullscreen toggle on
-  `#/arena`) so the canvas is the whole viewport, not a card competing with page padding.
-- **Per-agent icons** — replace the plain colored dots with small distinct icons/avatars per
-  judge and per client/provider role, so a viewer can actually tell agents apart at a glance
-  instead of reading the label underneath.
-- **Legible, game-like motion** — current drift is functional but not eye-trackable as an
-  event; redesign the fund → submit → verdict beats as clear, readable motion (a distinct
-  travel/arrival/pulse per event) rather than ambient wander, closer to how a live dashboard
-  or simple game reads at a glance.
-- Re-run the **hallmark** skill (already used for the site's Cobalt redesign) specifically
-  against this page — it was invoked broadly for the whole-site redesign earlier, not with
-  Arena's full-screen/gamified motion as the explicit brief, so its motion/hierarchy guidance
-  hasn't actually been applied here yet.
-
 ## Multi-agent swarm demo — see `docs/experiments/`
 
 A 5-client / 5-provider autonomous swarm (`agents/client-agent.mjs`, `agents/provider-agent.mjs`)
