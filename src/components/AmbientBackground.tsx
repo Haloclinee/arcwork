@@ -125,7 +125,13 @@ export function AmbientBackground() {
       }
     }
     function onClick(e: MouseEvent) {
-      if (!reduced) spawnBurst(e.clientX, e.clientY);
+      if (reduced) return;
+      const target = e.target as HTMLElement;
+      // Skip real chrome — header/nav, floating controls, buttons/links —
+      // clicking those already triggers navigation and a burst on top of
+      // it just adds visible stutter for no payoff.
+      if (target.closest(".topbar, .corner-actions, .wallet-fab, .theme-toggle, a, button, input, textarea, select")) return;
+      spawnBurst(e.clientX, e.clientY);
     }
     window.addEventListener("click", onClick);
 
