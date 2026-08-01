@@ -195,6 +195,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .container {
+  position: relative;
   max-width: 1040px;
   margin: 0 auto;
   padding: 0 24px;
@@ -202,6 +203,60 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+/* ── Ambient background — dot grid, traveling pulses, drifting ticker
+   rows. Fixed full-viewport, sits behind the page (see .container's own
+   position:relative above, and .topbar's existing position:relative,
+   which lift real content into a later stacking step). Every page but
+   Arena, which has its own full-screen canvas. ── */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ambient-bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ambient-bg-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
+}
+.ambient-bg-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--color-accent);
+  will-change: transform;
+}
+.ambient-bg-row span { padding: 0 3rem; }
+.ambient-bg-row-dim { color: var(--color-ink); }
+
+@keyframes ambientDriftLeft {
+  from { transform: translateY(-50%) translateX(0); }
+  to { transform: translateY(-50%) translateX(-50%); }
+}
+@keyframes ambientDriftRight {
+  from { transform: translateY(-50%) translateX(-50%); }
+  to { transform: translateY(-50%) translateX(0); }
+}
+.ambient-bg-row-left { animation: ambientDriftLeft linear infinite; }
+.ambient-bg-row-right { animation: ambientDriftRight linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-bg-row { animation: none !important; }
 }
 
 /* ── Top bar — spans the full viewport edge to edge, unlike the

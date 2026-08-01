@@ -12,6 +12,7 @@ import { JudgesPage } from "./pages/JudgesPage";
 import { JudgeHistoryPage } from "./pages/JudgeHistoryPage";
 import { ArenaPage } from "./pages/ArenaPage";
 import { TutorialModal } from "./components/Tutorial";
+import { AmbientBackground } from "./components/AmbientBackground";
 
 const TUTORIAL_KEY = "arcwork:tutorial:seen";
 const THEME_KEY = "arcwork:theme";
@@ -174,6 +175,7 @@ export default function App() {
 
   return (
     <div className="shell">
+      <AmbientBackground />
       <header className="topbar">
         <div className="topbar-inner">
           <a href="#/" className="brand">
