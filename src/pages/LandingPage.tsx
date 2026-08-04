@@ -47,7 +47,10 @@ function HeroCodeCard({ job }: { job: Job | null | undefined }) {
           <span className="k">budget</span>: <span className="n">{job.budget > 0n ? fmtUsdc(job.budget) : "0"}</span>{" "}
           <span className="s">USDC</span>
         </div>
-        <div className={`status-chip ${chipClass}`}>{chipLabel}</div>
+        <div className={`status-chip ${chipClass}`}>
+          {chipLabel}
+          <span className="cursor-blink" aria-hidden="true" />
+        </div>
       </div>
     </div>
   );
@@ -178,7 +181,7 @@ export function LandingPage() {
     <>
       <section className="hero">
         <div>
-          <span className="hero-eyebrow">Arc Testnet · ERC-8183</span>
+          <span className="hero-eyebrow"><span className="dot" />Arc Testnet · ERC-8183</span>
           <h1>Escrow that pays out on verdict.</h1>
           <p>
             Post a job, fund it in USDC, and let a neutral judge release payment or refund the

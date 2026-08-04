@@ -56,7 +56,13 @@ use named tokens, never raw px/rem values.
 - Easing: `--ease-out: cubic-bezier(0.16, 1, 0.3, 1)`
 - Durations: 150ms (hover/focus), 220ms (card lift, chat pop-in)
 - Reveal pattern: none on app pages (function carries the page); a one-shot
-  fade-up on the Jobs page card grid only.
+  fade-up on the Jobs page card grid only. The homepage hero gets its own
+  one-shot staggered fade-up (eyebrow → h1 → copy → CTAs → code card,
+  ~90ms apart) — the single orchestrated entrance on the marketing surface,
+  not repeated elsewhere. The hero's live `getJob()` code card also carries
+  a blinking terminal cursor after the status line, and the eyebrow reuses
+  the existing `.dot` live-indicator (same one as the wallet-connected
+  state in App.tsx) — both reinforce "nothing simulated," not decoration.
 - Reduced-motion: transitions collapse to none via `prefers-reduced-motion: reduce`.
 
 ## Microinteractions stance
