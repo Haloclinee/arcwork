@@ -114,6 +114,38 @@ html, body {
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes borderBeamSpin {
+  to { --border-angle: 360deg; }
+}
+/* Sweeping light on a card's border — conic-gradient rotated via an
+   animated custom property, masked down to a 1px ring with the padding-box/
+   border-box trick. No JS, no motion lib; the host element just needs
+   position: relative + border-radius for `inherit` to pick up. */
+.border-beam {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 0%,
+    transparent 80%,
+    color-mix(in oklch, var(--color-accent) 70%, transparent) 92%,
+    var(--color-accent) 97%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: borderBeamSpin 5.5s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
@@ -563,6 +595,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .code-card {
+  position: relative;
   background: var(--color-graphite);
   border-radius: var(--radius);
   border: 1px solid var(--color-rule-2);
@@ -728,6 +761,7 @@ input.invalid { border-color: var(--status-rejected); }
 }
 
 .card {
+  position: relative;
   background: var(--color-paper-2);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius);

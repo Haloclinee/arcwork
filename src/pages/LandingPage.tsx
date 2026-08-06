@@ -8,6 +8,10 @@ import { RatingBadge } from "../components/StarRating";
 import { TipsBadge } from "../components/TipJudge";
 import { EVALUATOR_PRESETS } from "../lib/presets";
 import { scanAddressHistory, type RepScan } from "../lib/reputation";
+import { BorderBeam } from "../components/BorderBeam";
+import { NumberTicker } from "../components/NumberTicker";
+import { USDC_DECIMALS } from "../lib/arc";
+import { formatUnits } from "viem";
 
 // Live getJob() readout — whatever the newest job on-chain actually is,
 // never a curated example. If it's quiet, the card is quiet.
@@ -15,6 +19,7 @@ function HeroCodeCard({ job }: { job: Job | null | undefined }) {
   if (!job) {
     return (
       <div className="code-card">
+        <BorderBeam />
         <div className="code-bar">
           <span className="code-dot" /><span className="code-dot" /><span className="code-dot" />
           <span className="code-file">getJob()</span>
@@ -32,6 +37,7 @@ function HeroCodeCard({ job }: { job: Job | null | undefined }) {
     status.toLowerCase();
   return (
     <div className="code-card">
+      <BorderBeam />
       <div className="code-bar">
         <span className="code-dot" /><span className="code-dot" /><span className="code-dot" />
         <span className="code-file">getJob({job.id.toString()})</span>
@@ -113,15 +119,27 @@ function ReputationPreview({ address }: { address: `0x${string}` }) {
   return (
     <div className="stat-row">
       <div className="stat">
-        <span className="stat-num">{scan ? completed.length : "…"}</span>
+        {scan ? (
+          <NumberTicker value={completed.length} className="stat-num" />
+        ) : (
+          <span className="stat-num">…</span>
+        )}
         <span className="muted small">completed</span>
       </div>
       <div className="stat">
-        <span className="stat-num">{successRate !== null ? `${successRate}%` : "—"}</span>
+        {successRate !== null ? (
+          <NumberTicker value={successRate} format={(n) => `${Math.round(n)}%`} className="stat-num" />
+        ) : (
+          <span className="stat-num">—</span>
+        )}
         <span className="muted small">success rate</span>
       </div>
       <div className="stat">
-        <span className="stat-num">{fmtUsdc(earned)}</span>
+        <NumberTicker
+          value={Number(formatUnits(earned, USDC_DECIMALS))}
+          format={(n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          className="stat-num"
+        />
         <span className="muted small">USDC earned</span>
       </div>
     </div>
@@ -201,8 +219,8 @@ export function LandingPage() {
           <div className="section-head">
             <h2>Latest jobs</h2>
             <p className="muted">
-              {counter ? counter.toLocaleString("en-US") : "159,000+"} jobs created on the canonical
-              ERC-8183 contract · <a className="win-rate" href="#/jobs">See all →</a>
+              {counter ? <NumberTicker value={Number(counter)} /> : "159,000+"} jobs created on the
+              canonical ERC-8183 contract · <a className="win-rate" href="#/jobs">See all →</a>
             </p>
           </div>
           <div className="grid">
@@ -249,6 +267,7 @@ export function LandingPage() {
             </a>
           </div>
           <div className="card judge-card">
+            <BorderBeam />
             <div className="judge-name"><Identity address={judge.address} /></div>
             <div className="judge-rating"><RatingBadge judge={judge.address} /></div>
             <p className="judge-desc">{judge.description}</p>
@@ -287,6 +306,7 @@ export function LandingPage() {
               </p>
             </div>
             <div className="card">
+              <BorderBeam />
               <div className="judge-name"><Identity address={repProvider} linkToRep /></div>
               <ReputationPreview address={repProvider} />
               <a className="win-rate" href={`#/rep/${repProvider}`} style={{ marginTop: "0.5rem", display: "inline-block" }}>
